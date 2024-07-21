@@ -3,6 +3,7 @@ import { Bitmap } from "./core/Bitmap.ts";
 import { SDFTransform } from "./core/SDFTransform.ts";
 import { Shape } from "./core/Shape.ts";
 import { edgeColoringSimple } from "./core/edgeColoring.ts";
+import { generateSDF } from "./core/generateMSDF.ts";
 
 export function library(data: ArrayBuffer) {
   const font = new typr.Font(data);
@@ -26,9 +27,8 @@ export function library(data: ArrayBuffer) {
   const transform = new SDFTransform();
   const shape = Shape.fromPath(path);
   edgeColoringSimple(shape, 3.0);
-  console.log(shape);
-  // generateDistanceField(output, shape, transform);
-
+  generateSDF(output, shape, transform);
+  console.log(shape, output);
   // const shape = new Shape();
   // if (loadGlyph(shape, font, 'A', FontCoordinateScaling.FONT_SCALING_EM_NORMALIZED)) {
   //   shape.normalize();
