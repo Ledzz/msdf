@@ -9,14 +9,14 @@ export function library(data: ArrayBuffer) {
   const svgPath = font.pathToSVG(path);
 
   const sdfImageData = generate(
-    64, // width
-    64, // height
+    256, // width
+    256, // height
     svgPath, // path
     [0, 0, 2048, 2048], // viewBox
     25, // maxDistance
-    1, // exponent
+    0.5, // exponent
   );
-  debugData(sdfImageData, 64, 64);
+  debugData(sdfImageData, 256, 256);
   console.log(sdfImageData);
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 2000 2000");

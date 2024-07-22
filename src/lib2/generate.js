@@ -22,12 +22,12 @@ export function generate(
   maxDistance = Math.max(viewBox[2] - viewBox[0], viewBox[3] - viewBox[1]) / 2,
   sdfExponent = 1,
 ) {
-  try {
-    return webgl.generate(...arguments);
-  } catch (e) {
-    console.info("WebGL SDF generation failed, falling back to JS", e);
-    return javascript.generate(...arguments);
-  }
+  // try {
+  //   return webgl.generate(...arguments);
+  // } catch (e) {
+  //   console.info("WebGL SDF generation failed, falling back to JS", e);
+  return javascript.generate(...arguments);
+  // }
 }
 
 /**
