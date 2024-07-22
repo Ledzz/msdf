@@ -1,17 +1,14 @@
-import './App.css'
-import {library} from "./lib1";
-
-
-
+import "./App.css";
+import { library } from "./lib2";
 
 async function loadFont() {
-    const font = await (await fetch('/Inter-Bold.otf')).arrayBuffer()
-    library(font)
+  const font = await (await fetch("/Inter-Bold.otf")).arrayBuffer();
+  library(font);
 }
+loadFont();
 
 function App() {
-    loadFont();
-return null;
+  return null;
 }
 
-export default App
+export default App;
