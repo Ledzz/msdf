@@ -1,5 +1,5 @@
 import './App.css'
-import {library} from "./lib";
+import {library} from "./lib1";
 
 
 

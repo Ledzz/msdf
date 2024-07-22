@@ -39,7 +39,7 @@ function generateDistanceField(
   edgeSelector: typeof EdgeSelector,
   distanceFinder: typeof DistanceFinder,
 ) {
-  const distanceFinder = new distanceFinder(shape);
+  // const distanceFinder = new distanceFinder(shape);
   // let rightToLeft = false;
   //
   // for (let y = 0; y < output.height; ++y) {
