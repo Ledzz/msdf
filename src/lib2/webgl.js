@@ -1,9 +1,9 @@
 import { pathToLineSegments } from "./path.js";
 import { withWebGLContext } from "./webglUtils.js";
-import mainVertex from "./shaders/main.vertex.glsl?raw";
-import mainFragment from "./shaders/main.fragment.glsl?raw";
-import viewportQuadVertex from "./shaders/viewportQuad.vertex.glsl?raw";
-import postFragment from "./shaders/post.fragment.glsl?raw";
+import mainVertex from "./shaders/main.vertex.glsl";
+import mainFragment from "./shaders/main.fragment.glsl";
+import viewportQuadVertex from "./shaders/viewportQuad.vertex.glsl";
+import postFragment from "./shaders/post.fragment.glsl";
 
 // Single triangle covering viewport
 const viewportUVs = new Float32Array([0, 0, 2, 0, 0, 2]);
@@ -152,7 +152,6 @@ export function generateIntoFramebuffer(
   pathToLineSegments(path, (x1, y1, x2, y2) => {
     lineSegmentCoords.push(x1, y1, x2, y2);
   });
-
   lineSegmentCoords = new Float32Array(lineSegmentCoords);
 
   withWebGLContext(

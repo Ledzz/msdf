@@ -1,5 +1,5 @@
-import * as javascript from './javascript.js'
-import * as webgl  from './webgl.js'
+import * as javascript from "./javascript.js";
+import * as webgl from "./webgl.js";
 
 /**
  * Generate an SDF texture image for a 2D path.
@@ -20,13 +20,13 @@ export function generate(
   path,
   viewBox,
   maxDistance = Math.max(viewBox[2] - viewBox[0], viewBox[3] - viewBox[1]) / 2,
-  sdfExponent = 1
+  sdfExponent = 1,
 ) {
   try {
-    return webgl.generate(...arguments)
-  } catch(e) {
-    console.info('WebGL SDF generation failed, falling back to JS', e)
-    return javascript.generate(...arguments)
+    return webgl.generate(...arguments);
+  } catch (e) {
+    console.info("WebGL SDF generation failed, falling back to JS", e);
+    return javascript.generate(...arguments);
   }
 }
 
@@ -61,12 +61,12 @@ export function generateIntoCanvas(
   canvas,
   x = 0,
   y = 0,
-  channel = 0
+  channel = 0,
 ) {
   try {
-    return webgl.generateIntoCanvas(...arguments)
-  } catch(e) {
-    console.info('WebGL SDF generation failed, falling back to JS', e)
-    return javascript.generateIntoCanvas(...arguments)
+    return webgl.generateIntoCanvas(...arguments);
+  } catch (e) {
+    console.info("WebGL SDF generation failed, falling back to JS", e);
+    return javascript.generateIntoCanvas(...arguments);
   }
 }

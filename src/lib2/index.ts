@@ -7,7 +7,6 @@ export function library(data: ArrayBuffer) {
   const path = font.glyphToPath(glyph);
 
   const svgPath = font.pathToSVG(path);
-  console.log(svgPath);
 
   const sdfImageData = generate(
     64, // width
@@ -18,6 +17,7 @@ export function library(data: ArrayBuffer) {
     1, // exponent
   );
   debugData(sdfImageData, 64, 64);
+  console.log(sdfImageData);
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 2000 2000");
   svg.setAttribute("width", "100");
