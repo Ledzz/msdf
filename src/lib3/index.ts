@@ -292,14 +292,15 @@ function debugPSDF(output: Float32Array, w: number, h: number) {
   document.body.append(div);
   div.innerHTML = Array.from(output)
     .map((d, i) => {
-      return `<span style="background-color: rgba(0, 0, 0, ${map(d, -1024, 2048, 0, 0.8)}); display: flex;align-items: center;justify-content: center" data-x="${i % Math.sqrt(output.length)}"  data-y="${Math.floor(i / Math.sqrt(output.length))}">${d.toFixed(0)}</span>`;
+      const sideCount = Math.sqrt(output.length);
+      return `<span style="background-color: rgba(0, 0, 0, ${map(d, -1024, 1024, 0, 0.8)}); display: flex;align-items: center;justify-content: center" data-x="${i % sideCount}"  data-y="${Math.floor(i / sideCount)}">${sideCount < 64 ? d.toFixed(0) : ""}</span>`;
     })
     .join("");
 }
 
 function generatePSDF(shape: Shape) {
-  const w = 16;
-  const h = 16;
+  const w = 256;
+  const h = 256;
 
   const sw = 2048;
   const sh = 2048;
@@ -313,7 +314,7 @@ function generatePSDF(shape: Shape) {
       let minDistance = Infinity;
       let maxOrtho = 0;
       let closestEdge: Edge | null = null;
-      shape.contours.forEach((contour, ci) => {
+      shape.contours.forEach((contour) => {
         contour.edges.forEach((edge) => {
           const [d, ortho] = distanceToSegment(edge.segment, [px, py], false);
           if (
@@ -331,6 +332,8 @@ function generatePSDF(shape: Shape) {
         const [d] = distanceToSegment(closestEdge.segment, [px, py], true);
 
         const i = y * w + x;
+        // для SDF просто подставляем minDistance
+
         output[i] = d;
       }
     }
@@ -340,8 +343,8 @@ function generatePSDF(shape: Shape) {
 }
 /*
 function generateSDF(shape: Shape) {
-  const w = 64;
-  const h = 64;
+  const w = 256;
+  const h = 256;
 
   const sw = 2048;
   const sh = 2048;
