@@ -3,7 +3,7 @@ import { Path } from "@fredli74/typr";
 
 export function library(data: ArrayBuffer) {
   const font = new typr.Font(data);
-  const glyph = font.stringToGlyphs("K")[0];
+  const glyph = font.stringToGlyphs("A")[0];
   const path = font.glyphToPath(glyph);
   // TODO: 4.1.3.1 Edge pruning
 
@@ -19,7 +19,9 @@ export function library(data: ArrayBuffer) {
   document.body.append(svg);
 
   const shape = shapeFromPath(path);
-  // console.log(path, shape.contours[0].edges);
+  // delete shape.contours[0];
+
+  // console.log(path, shape);
   generatePSDF(shape);
 
   const a = {
@@ -30,8 +32,8 @@ export function library(data: ArrayBuffer) {
             segment: {
               type: "line",
               points: [
-                [178, 0],
-                [611, 0],
+                [531, 0],
+                [683, 467],
               ],
             },
           },
@@ -39,8 +41,8 @@ export function library(data: ArrayBuffer) {
             segment: {
               type: "line",
               points: [
-                [611, 0],
-                [611, 582],
+                [683, 467],
+                [1422, 467],
               ],
             },
           },
@@ -48,8 +50,8 @@ export function library(data: ArrayBuffer) {
             segment: {
               type: "line",
               points: [
-                [611, 582],
-                [824, 842],
+                [1422, 467],
+                [1574, 0],
               ],
             },
           },
@@ -57,8 +59,8 @@ export function library(data: ArrayBuffer) {
             segment: {
               type: "line",
               points: [
-                [824, 842],
-                [1385, 0],
+                [1574, 0],
+                [2038, 0],
               ],
             },
           },
@@ -66,8 +68,8 @@ export function library(data: ArrayBuffer) {
             segment: {
               type: "line",
               points: [
-                [1385, 0],
-                [1903, 0],
+                [2038, 0],
+                [1332, 2048],
               ],
             },
           },
@@ -75,8 +77,8 @@ export function library(data: ArrayBuffer) {
             segment: {
               type: "line",
               points: [
-                [1903, 0],
-                [1134, 1131],
+                [1332, 2048],
+                [774, 2048],
               ],
             },
           },
@@ -84,8 +86,8 @@ export function library(data: ArrayBuffer) {
             segment: {
               type: "line",
               points: [
-                [1134, 1131],
-                [1894, 2048],
+                [774, 2048],
+                [67, 0],
               ],
             },
           },
@@ -93,8 +95,21 @@ export function library(data: ArrayBuffer) {
             segment: {
               type: "line",
               points: [
-                [1894, 2048],
-                [1375, 2048],
+                [67, 0],
+                [531, 0],
+              ],
+            },
+          },
+        ],
+      },
+      {
+        edges: [
+          {
+            segment: {
+              type: "line",
+              points: [
+                [793, 805],
+                [1045, 1580],
               ],
             },
           },
@@ -102,8 +117,8 @@ export function library(data: ArrayBuffer) {
             segment: {
               type: "line",
               points: [
-                [1375, 2048],
-                [638, 1145],
+                [1045, 1580],
+                [1061, 1580],
               ],
             },
           },
@@ -111,8 +126,8 @@ export function library(data: ArrayBuffer) {
             segment: {
               type: "line",
               points: [
-                [638, 1145],
-                [611, 1145],
+                [1061, 1580],
+                [1313, 805],
               ],
             },
           },
@@ -120,26 +135,8 @@ export function library(data: ArrayBuffer) {
             segment: {
               type: "line",
               points: [
-                [611, 1145],
-                [611, 2048],
-              ],
-            },
-          },
-          {
-            segment: {
-              type: "line",
-              points: [
-                [611, 2048],
-                [178, 2048],
-              ],
-            },
-          },
-          {
-            segment: {
-              type: "line",
-              points: [
-                [178, 2048],
-                [null, null],
+                [1313, 805],
+                [531, 0],
               ],
             },
           },
@@ -205,6 +202,7 @@ function shapeFromPath(path: Path): Shape {
     edges: [],
   };
   let point: Vector2 | undefined;
+  let firstPoint: Vector2 | undefined;
 
   const shape: Shape = {
     contours: [],
@@ -214,6 +212,7 @@ function shapeFromPath(path: Path): Shape {
     switch (cmd) {
       case "M":
         point = [path.crds[crdsi++], path.crds[crdsi++]] satisfies Vector2;
+        firstPoint = clone(point);
         break;
 
       case "L": {
@@ -251,12 +250,12 @@ function shapeFromPath(path: Path): Shape {
         break;
 
       case "Z": {
-        if (!point) {
+        if (!point || !firstPoint) {
           throw new Error("No prev point for close");
         }
         const line = {
           type: "line",
-          points: [point, [path.crds[0], path.crds[1]]],
+          points: [point, firstPoint],
         } satisfies LineSegment;
         contour.edges.push({ segment: line });
 
@@ -305,24 +304,24 @@ function generatePSDF(shape: Shape) {
   const sh = 2048;
 
   const output = new Float32Array(w * h);
+
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       // {
-      //   {
+      // {
       //     const x = 30;
-      //     const y = 30;
+      // const y = 0;
       const px = ((x + 0.5) * sw) / w;
       const py = ((y + 0.5) * sh) / h;
       let minDistance = Infinity;
       let maxOrtho = 0;
-      shape.contours.forEach((contour) => {
+      shape.contours.forEach((contour, ci) => {
         contour.edges.forEach((edge) => {
           const [d, ortho] = distanceToSegment(edge.segment, [px, py], false);
-          if (Math.abs(d) < Math.abs(minDistance)) {
-            minDistance = d;
-            maxOrtho = ortho;
-          }
-          if (Math.abs(d) === Math.abs(minDistance) && ortho > maxOrtho) {
+          if (
+            Math.abs(d) < Math.abs(minDistance) ||
+            (Math.abs(d) === Math.abs(minDistance) && ortho > maxOrtho)
+          ) {
             minDistance = d;
             maxOrtho = ortho;
           }
