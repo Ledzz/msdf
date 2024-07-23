@@ -299,8 +299,8 @@ function debugPSDF(output: Float32Array, w: number, h: number) {
 }
 
 function generatePSDF(shape: Shape) {
-  const w = 256;
-  const h = 256;
+  const w = 16;
+  const h = 16;
 
   const sw = 2048;
   const sh = 2048;
@@ -423,6 +423,8 @@ function distanceToLine(
   if (param > 1) {
     return [sign * length(sub(point, b)), wtf, b];
   }
+
+  return [Infinity, 0, [0, 0]];
 }
 
 function sum(v1: Vector2, v2: Vector2): Vector2 {
@@ -466,6 +468,7 @@ function distanceToCubic(
   point: Vector2,
   pseudo: boolean,
 ): ReturnType<typeof distanceToSegment> {
+  // TODO
   return [Infinity, [0, 0]];
 }
 
