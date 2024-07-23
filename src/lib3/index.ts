@@ -23,6 +23,7 @@ export function library(data: ArrayBuffer) {
 
   // console.log(path, shape);
   generatePSDF(shape);
+  // generateSDF(shape);
 
   const a = {
     contours: [
@@ -297,8 +298,8 @@ function debugPSDF(output: Float32Array, w: number, h: number) {
 }
 
 function generatePSDF(shape: Shape) {
-  const w = 32;
-  const h = 32;
+  const w = 16;
+  const h = 16;
 
   const sw = 2048;
   const sh = 2048;
@@ -307,10 +308,48 @@ function generatePSDF(shape: Shape) {
 
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      // {
-      // {
-      //     const x = 30;
-      // const y = 0;
+      const px = ((x + 0.5) * sw) / w;
+      const py = ((y + 0.5) * sh) / h;
+      let minDistance = Infinity;
+      let maxOrtho = 0;
+      let closestEdge: Edge | null = null;
+      shape.contours.forEach((contour, ci) => {
+        contour.edges.forEach((edge) => {
+          const [d, ortho] = distanceToSegment(edge.segment, [px, py], false);
+          if (
+            Math.abs(d) < Math.abs(minDistance) ||
+            (Math.abs(d) === Math.abs(minDistance) && ortho > maxOrtho)
+          ) {
+            minDistance = d;
+            maxOrtho = ortho;
+            closestEdge = edge;
+          }
+        });
+      });
+
+      if (closestEdge) {
+        const [d] = distanceToSegment(closestEdge.segment, [px, py], true);
+
+        const i = y * w + x;
+        output[i] = d;
+      }
+    }
+  }
+
+  debugPSDF(output, w, h);
+}
+/*
+function generateSDF(shape: Shape) {
+  const w = 64;
+  const h = 64;
+
+  const sw = 2048;
+  const sh = 2048;
+
+  const output = new Float32Array(w * h);
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
       const px = ((x + 0.5) * sw) / w;
       const py = ((y + 0.5) * sh) / h;
       let minDistance = Infinity;
@@ -335,7 +374,7 @@ function generatePSDF(shape: Shape) {
 
   debugPSDF(output, w, h);
 }
-
+*/
 function distanceToSegment(
   segment: Segment,
   point: Vector2,
