@@ -425,6 +425,30 @@ function edgeColoringSimple(shape: Shape, crossThreshold: number) {
   });
 }
 
+function renderBitmapToCanvas(bitmap: Bitmap) {
+  const canvas = document.createElement("canvas");
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("No context");
+  }
+  const channels = bitmap.data.length / (bitmap.width * bitmap.height);
+  const imageData = ctx.createImageData(bitmap.width, bitmap.height);
+  for (let i = 0; i < bitmap.data.length; ++i) {
+    for (let k = 0; k < channels; ++k) {
+      imageData.data[i * channels + k] = bitmap.data[i] * 255;
+    }
+
+    for (let k = channels; k < 4; ++k) {
+      imageData.data[i * channels + k] = 255;
+    }
+    // imageData.data[Math.floor()] = bitmap.data[i];
+  }
+  ctx.putImageData(imageData, 0, 0);
+  document.body.append(canvas);
+}
+
 export function library(data: ArrayBuffer) {
   const font = new typr.Font(data);
   const glyph = font.stringToGlyphs("A")[0];
@@ -446,7 +470,7 @@ export function library(data: ArrayBuffer) {
   const scale = new Vector2(1, 1);
   const translate = new Vector2(0, 0);
   generateMSDF(bitmap, shape, range, scale, translate, {});
-  console.log(bitmap);
+  renderBitmapToCanvas(bitmap);
 }
 export function isCorner(
   aDir: Vector2,
