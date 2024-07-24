@@ -20,8 +20,8 @@ export function library(data: ArrayBuffer) {
 
   const shape = shapeFromPath(path);
   // delete shape.contours[0];
-
-  // console.log(path, shape);
+  edgeColoringSimple(shape, 3);
+  console.log(path, shape);
   generatePSDF(shape);
   // generateSDF(shape);
 
@@ -145,26 +145,6 @@ export function library(data: ArrayBuffer) {
       },
     ],
   };
-
-  // const output = new Bitmap(10, 10);
-  // const transform = new SDFTransform();
-  // const shape = Shape.fromPath(path);
-  // edgeColoringSimple(shape, 3.0);
-  // generateSDF(output, shape, transform);
-  // console.log(shape, output);
-  // const shape = new Shape();
-  // if (loadGlyph(shape, font, 'A', FontCoordinateScaling.FONT_SCALING_EM_NORMALIZED)) {
-  //   shape.normalize();
-  //   //                      max. angle
-  //   edgeColoringSimple(shape, 3.0);
-  //   //          output width, height
-  //   Bitmap<float, 3> msdf(32, 32);
-  //   //                            scale, translation (in em's)
-  //   SDFTransformation t(Projection(32.0, Vector2(0.125, 0.125)), Range(0.125));
-  //   generateMSDF(msdf, shape, t);
-  //   savePng(msdf, "output.png");
-  // }
-  // destroyFont(font);
 }
 
 type Vector2 = [number, number];
@@ -182,6 +162,7 @@ type CubicSegment = {
 type Segment = LineSegment | CubicSegment;
 
 type Edge = {
+  color?: EdgeColor;
   segment: Segment;
 };
 
@@ -231,6 +212,7 @@ function shapeFromPath(path: Path): Shape {
       }
 
       case "Q":
+        // TODO: Parse quadratic segment
         throw new Error("Quadratic segment not implemented");
 
       case "C":
@@ -342,6 +324,7 @@ function generatePSDF(shape: Shape) {
   debugPSDF(output, w, h);
 }
 /*
+TODO: SDF
 function generateSDF(shape: Shape) {
   const w = 256;
   const h = 256;
@@ -389,7 +372,14 @@ function distanceToSegment(
     return distanceToCubic(segment, point, pseudo);
   }
 }
-
+function distanceToCubic(
+  segment: CubicSegment,
+  point: Vector2,
+  pseudo: boolean,
+): ReturnType<typeof distanceToSegment> {
+  // TODO: Calculate distance to cubic segment
+  return [Infinity, 0, [0, 0]];
+}
 function clamp(param: number, a: number, b: number) {
   return Math.min(Math.max(param, a), b);
 }
@@ -463,15 +453,6 @@ function normalize(v: Vector2): Vector2 {
   return [v[0] / len, v[1] / len];
 }
 
-function distanceToCubic(
-  segment: CubicSegment,
-  point: Vector2,
-  pseudo: boolean,
-): ReturnType<typeof distanceToSegment> {
-  // TODO
-  return [Infinity, 0, [0, 0]];
-}
-
 function map(
   value: number,
   min1: number,
@@ -480,4 +461,122 @@ function map(
   max2: number,
 ) {
   return min2 + ((value - min1) * (max2 - min2)) / (max1 - min1);
+}
+enum EdgeColor {
+  BLACK = 0,
+  RED = 1,
+  GREEN = 2,
+  YELLOW = 3,
+  BLUE = 4,
+  MAGENTA = 5,
+  CYAN = 6,
+  WHITE = 7,
+}
+
+function getDirectionLine(segment: LineSegment) {
+  return sub(segment.points[1], segment.points[0]);
+}
+function getDirectionCubic(segment: CubicSegment, param: number) {
+  // TODO: Calculate direction for cubic segment
+  return [0, 0] as Vector2;
+}
+
+function getDirection(edge: Edge, param: number) {
+  switch (edge.segment.type) {
+    case "line":
+      return getDirectionLine(edge.segment);
+    case "cubic":
+      return getDirectionCubic(edge.segment, param);
+  }
+}
+
+function isCorner(a: Vector2, b: Vector2, threshold: number) {
+  return dot(a, b) <= 0 || Math.abs(cross(a, b)) > threshold;
+}
+
+function edgeColoringSimple(shape: Shape, crossThreshold: number) {
+  let color = EdgeColor.CYAN;
+  const corners: number[] = [];
+
+  shape.contours.forEach((contour) => {
+    if (!contour.edges.length) {
+      return;
+    }
+
+    corners.length = 0;
+    let prevDirection = getDirection(
+      contour.edges[contour.edges.length - 1],
+      1,
+    );
+
+    contour.edges.forEach((edge, index) => {
+      if (
+        isCorner(
+          normalize(prevDirection),
+          normalize(getDirection(edge, 0)),
+          crossThreshold,
+        )
+      )
+        corners.push(index);
+      prevDirection = getDirection(edge, 1);
+    });
+
+    if (!corners.length) {
+      contour.edges.forEach((edge) => {
+        edge.color = color;
+      });
+    } else if (corners.length === 1) {
+      // TODO: Teardrop case
+    } else {
+      // int cornerCount = (int) corners.size();
+      // int spline = 0;
+      // int start = corners[0];
+      // int m = (int) contour->edges.size();
+      // switchColor(color, seed);
+      // EdgeColor initialColor = color;
+      // for (int i = 0; i < m; ++i) {
+      //   int index = (start+i)%m;
+      //   if (spline+1 < cornerCount && corners[spline+1] == index) {
+      //     ++spline;
+      //     switchColor(color, seed, EdgeColor((spline == cornerCount-1)*initialColor));
+      //   }
+      //   contour->edges[index]->color = color;
+      // }
+      const cornerCount = corners.length;
+      let spline = 0;
+      let start = corners[0];
+      const m = contour.edges.length;
+      color = switchColor(color);
+      const initialColor = color;
+      for (let i = 0; i < m; i++) {
+        const index = (start + i) % m;
+        if (spline + 1 < cornerCount && corners[spline + 1] === index) {
+          spline++;
+          color = switchColor(
+            color,
+            (spline === cornerCount - 1 ? 1 : 0) * initialColor,
+          );
+        }
+        contour.edges[index].color = color;
+      }
+    }
+  });
+}
+
+function switchColor(color: EdgeColor, banned?: EdgeColor) {
+  if (banned) {
+    const combined = color & (banned as EdgeColor);
+    if (
+      combined == EdgeColor.RED ||
+      combined == EdgeColor.GREEN ||
+      combined == EdgeColor.BLUE
+    )
+      return (combined ^ EdgeColor.WHITE) as EdgeColor;
+    else {
+      return switchColor(color);
+    }
+  } else {
+    const shifted = color << 1;
+    return ((shifted | (shifted >> 3)) & EdgeColor.WHITE) as EdgeColor;
+  }
 }
