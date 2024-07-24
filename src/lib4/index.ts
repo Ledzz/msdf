@@ -443,7 +443,6 @@ function renderBitmapToCanvas(bitmap: Bitmap) {
     for (let k = channels; k < 4; ++k) {
       imageData.data[i * channels + k] = 255;
     }
-    // imageData.data[Math.floor()] = bitmap.data[i];
   }
   ctx.putImageData(imageData, 0, 0);
   document.body.append(canvas);
