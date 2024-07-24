@@ -5,10 +5,6 @@ export function library(data: ArrayBuffer) {
   const font = new typr.Font(data);
   const glyph = font.stringToGlyphs("A")[0];
   const path = font.glyphToPath(glyph);
-  // TODO: 4.1.3.1 Edge pruning
-
-  // const shape = Shape.fromPath(path);
-  // console.log(shape);
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 2000 2000");
@@ -19,132 +15,9 @@ export function library(data: ArrayBuffer) {
   document.body.append(svg);
 
   const shape = shapeFromPath(path);
-  // delete shape.contours[0];
   edgeColoringSimple(shape, 3);
-  console.log(path, shape);
-  generatePSDF(shape);
-  // generateSDF(shape);
-
-  const a = {
-    contours: [
-      {
-        edges: [
-          {
-            segment: {
-              type: "line",
-              points: [
-                [531, 0],
-                [683, 467],
-              ],
-            },
-          },
-          {
-            segment: {
-              type: "line",
-              points: [
-                [683, 467],
-                [1422, 467],
-              ],
-            },
-          },
-          {
-            segment: {
-              type: "line",
-              points: [
-                [1422, 467],
-                [1574, 0],
-              ],
-            },
-          },
-          {
-            segment: {
-              type: "line",
-              points: [
-                [1574, 0],
-                [2038, 0],
-              ],
-            },
-          },
-          {
-            segment: {
-              type: "line",
-              points: [
-                [2038, 0],
-                [1332, 2048],
-              ],
-            },
-          },
-          {
-            segment: {
-              type: "line",
-              points: [
-                [1332, 2048],
-                [774, 2048],
-              ],
-            },
-          },
-          {
-            segment: {
-              type: "line",
-              points: [
-                [774, 2048],
-                [67, 0],
-              ],
-            },
-          },
-          {
-            segment: {
-              type: "line",
-              points: [
-                [67, 0],
-                [531, 0],
-              ],
-            },
-          },
-        ],
-      },
-      {
-        edges: [
-          {
-            segment: {
-              type: "line",
-              points: [
-                [793, 805],
-                [1045, 1580],
-              ],
-            },
-          },
-          {
-            segment: {
-              type: "line",
-              points: [
-                [1045, 1580],
-                [1061, 1580],
-              ],
-            },
-          },
-          {
-            segment: {
-              type: "line",
-              points: [
-                [1061, 1580],
-                [1313, 805],
-              ],
-            },
-          },
-          {
-            segment: {
-              type: "line",
-              points: [
-                [1313, 805],
-                [531, 0],
-              ],
-            },
-          },
-        ],
-      },
-    ],
-  };
+  // generatePSDF(shape);
+  generateMSDF(shape);
 }
 
 type Vector2 = [number, number];
@@ -255,11 +128,17 @@ function shapeFromPath(path: Path): Shape {
   return shape;
 }
 
-function debugPSDF(output: Float32Array, w: number, h: number) {
+function debugSDF(
+  output: Float32Array,
+  sdfw: number,
+  sdfh: number,
+  channels = 1,
+  useMedian = false,
+) {
   const div = document.createElement("div");
   div.style.display = "grid";
-  div.style.gridTemplateColumns = `repeat(${w}, 1fr)`;
-  div.style.gridTemplateRows = `repeat(${h}, 1fr)`;
+  div.style.gridTemplateColumns = `repeat(${sdfw}, 1fr)`;
+  div.style.gridTemplateRows = `repeat(${sdfh}, 1fr)`;
   div.style.width = "100%";
   div.style.height = "100%";
 
@@ -267,17 +146,51 @@ function debugPSDF(output: Float32Array, w: number, h: number) {
 
   div.style.cssText = `
   display: grid;
-    grid-template-columns: repeat(${w}, ${totalSize / w}px);
-    grid-template-rows: repeat(${h}, ${totalSize / h}px);
+    grid-template-columns: repeat(${sdfw}, ${totalSize / sdfw}px);
+    grid-template-rows: repeat(${sdfh}, ${totalSize / sdfh}px);
     font-size: 7px;
   `;
   document.body.append(div);
-  div.innerHTML = Array.from(output)
-    .map((d, i) => {
+
+  const grouped =
+    channels === 1
+      ? Array.from(output).map((d) => [d])
+      : Array.from(output).reduce((acc, d) => {
+          const prev = acc[acc.length - 1];
+
+          if (!prev) {
+            return [[d]];
+          }
+
+          if (prev.length < channels) {
+            prev.push(d);
+            return acc;
+          }
+
+          return [...acc, [d]];
+        }, [] as number[][]);
+
+  div.innerHTML = grouped
+    .map((c, i) => {
       const sideCount = Math.sqrt(output.length);
-      return `<span style="background-color: rgba(0, 0, 0, ${map(d, -1024, 1024, 0, 0.8)}); display: flex;align-items: center;justify-content: center" data-x="${i % sideCount}"  data-y="${Math.floor(i / sideCount)}">${sideCount < 64 ? d.toFixed(0) : ""}</span>`;
+
+      const r = map(channels === 1 ? c[0] : c[0], -1025, 1024, 255, 0);
+      const g = map(channels === 1 ? c[0] : c[1], -1025, 1024, 255, 0);
+      const b = map(channels === 1 ? c[0] : c[2], -1025, 1024, 255, 0);
+
+      const v = median(r, g, b);
+
+      const rv = useMedian ? v : r;
+      const gv = useMedian ? v : g;
+      const bv = useMedian ? v : b;
+
+      return `<span style="background-color: rgb(${rv}, ${gv}, ${bv}); display: flex;align-items: center;justify-content: center" data-x="${i % sideCount}"  data-y="${Math.floor(i / sideCount)}">${sideCount < 64 ? c.map((i) => i.toFixed(0)) : ""}</span>`;
     })
     .join("");
+}
+
+function median(...values: number[]) {
+  return values.sort((a, b) => a - b)[Math.floor(values.length / 2)];
 }
 
 function generatePSDF(shape: Shape) {
@@ -321,46 +234,98 @@ function generatePSDF(shape: Shape) {
     }
   }
 
-  debugPSDF(output, w, h);
+  debugSDF(output, w, h);
 }
-/*
-TODO: SDF
-function generateSDF(shape: Shape) {
-  const w = 256;
-  const h = 256;
+
+function generateMSDF(shape: Shape) {
+  const w = 8;
+  const h = 8;
 
   const sw = 2048;
   const sh = 2048;
 
-  const output = new Float32Array(w * h);
+  const output = new Float32Array(w * h * 3);
 
   for (let y = 0; y < h; y++) {
+    const row = y; // shape.contours.length - 1 - y;
     for (let x = 0; x < w; x++) {
       const px = ((x + 0.5) * sw) / w;
       const py = ((y + 0.5) * sh) / h;
-      let minDistance = Infinity;
-      let maxOrtho = 0;
-      shape.contours.forEach((contour, ci) => {
+
+      const r = {
+        minDistance: Infinity,
+        nearEdge: null as Edge | null,
+        nearParam: 0,
+        maxOrtho: 0,
+      };
+      const g = {
+        minDistance: Infinity,
+        nearEdge: null as Edge | null,
+        nearParam: 0,
+        maxOrtho: 0,
+      };
+      const b = {
+        minDistance: Infinity,
+        nearEdge: null as Edge | null,
+        nearParam: 0,
+        maxOrtho: 0,
+      };
+
+      shape.contours.forEach((contour) => {
         contour.edges.forEach((edge) => {
+          if (!edge.color) {
+            throw new Error("Edge color not set");
+          }
           const [d, ortho] = distanceToSegment(edge.segment, [px, py], false);
+
           if (
-            Math.abs(d) < Math.abs(minDistance) ||
-            (Math.abs(d) === Math.abs(minDistance) && ortho > maxOrtho)
+            edge.color & EdgeColor.RED &&
+            (Math.abs(d) < Math.abs(r.minDistance) ||
+              (Math.abs(d) === Math.abs(r.minDistance) && ortho > r.maxOrtho))
           ) {
-            minDistance = d;
-            maxOrtho = ortho;
+            r.minDistance = d;
+            r.maxOrtho = ortho;
+            r.nearEdge = edge;
+          }
+          if (
+            edge.color & EdgeColor.GREEN &&
+            (Math.abs(d) < Math.abs(g.minDistance) ||
+              (Math.abs(d) === Math.abs(g.minDistance) && ortho > g.maxOrtho))
+          ) {
+            g.minDistance = d;
+            g.maxOrtho = ortho;
+            g.nearEdge = edge;
+          }
+          if (
+            edge.color & EdgeColor.BLUE &&
+            (Math.abs(d) < Math.abs(b.minDistance) ||
+              (Math.abs(d) === Math.abs(b.minDistance) && ortho > b.maxOrtho))
+          ) {
+            b.minDistance = d;
+            b.maxOrtho = ortho;
+            b.nearEdge = edge;
           }
         });
       });
+      const i = (row * w + x) * 3;
 
-      const i = y * w + x;
-      output[i] = minDistance;
+      if (r.nearEdge) {
+        const [d] = distanceToSegment(r.nearEdge.segment, [px, py], true);
+        output[i] = d;
+      }
+      if (g.nearEdge) {
+        const [d] = distanceToSegment(g.nearEdge.segment, [px, py], true);
+        output[i + 1] = d;
+      }
+      if (b.nearEdge) {
+        const [d] = distanceToSegment(b.nearEdge.segment, [px, py], true);
+        output[i + 2] = d;
+      }
     }
   }
-
-  debugPSDF(output, w, h);
+  debugSDF(output, w, h, 3, true);
 }
-*/
+
 function distanceToSegment(
   segment: Segment,
   point: Vector2,
