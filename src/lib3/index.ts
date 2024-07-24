@@ -464,12 +464,12 @@ function normalize(v: Vector2): Vector2 {
 }
 
 function distanceToCubic(
-  points: [Vector2, Vector2, Vector2, Vector2],
+  segment: CubicSegment,
   point: Vector2,
   pseudo: boolean,
 ): ReturnType<typeof distanceToSegment> {
   // TODO
-  return [Infinity, [0, 0]];
+  return [Infinity, 0, [0, 0]];
 }
 
 function map(
