@@ -16,8 +16,8 @@ export function library(data: ArrayBuffer) {
 
   const shape = shapeFromPath(path);
   edgeColoringSimple(shape, 3);
-  // generatePSDF(shape);
-  generateMSDF(shape);
+  generatePSDF(shape);
+  // generateMSDF(shape);
 }
 
 type Vector2 = [number, number];
@@ -169,11 +169,17 @@ function debugSDF(
 
           return [...acc, [d]];
         }, [] as number[][]);
+  // const sideCount = Math.sqrt(output.length);
+  // for (let x = 0; x < sdfw; x++) {
+  //   for (let y = 0; y < outputHeight; y++) {
+  //     const sampled = bilinearSample(grouped, x / outputWidth, y / outputWidth);
+  //   }
+  // }
+
+  const sideCount = Math.sqrt(output.length);
 
   div.innerHTML = grouped
     .map((c, i) => {
-      const sideCount = Math.sqrt(output.length);
-
       const r = map(channels === 1 ? c[0] : c[0], -1025, 1024, 255, 0);
       const g = map(channels === 1 ? c[0] : c[1], -1025, 1024, 255, 0);
       const b = map(channels === 1 ? c[0] : c[2], -1025, 1024, 255, 0);
@@ -189,6 +195,40 @@ function debugSDF(
     .join("");
 }
 
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
+}
+
+// function bilinearSample(values: [number][], x: number, y: number) {
+//   const w = Math.sqrt(values.length);
+//   const h = Math.sqrt(values.length);
+//   // console.log(x, y);
+//   const x0 = Math.floor(x * w);
+//   const y0 = Math.floor(y * h);
+//   const x1 = Math.ceil(x * w);
+//   const y1 = Math.ceil(y * h);
+//
+//   const v00 = values[y0 * h + x0];
+//   const v01 = values[y1 * h + x0];
+//   const v10 = values[y0 * h + x1];
+//   const v11 = values[y1 * h + x1];
+//
+//   const xFrac = x * w - x0;
+//   const yFrac = y * h - y0;
+//
+//   console.log(y0);
+//
+//   const v0 = lerpArray(v00, v01, yFrac);
+//   const v1 = lerpArray(v10, v11, yFrac);
+//
+//   // console.log(x, y, lerpArray(v0, v1, xFrac));
+//   return lerpArray(v0, v1, xFrac);
+// }
+
+function lerpArray(a: number[], b: number[], t: number): number[] {
+  return a.map((v, i) => lerp(v, b[i], t));
+}
+
 function median(...values: number[]) {
   return values.sort((a, b) => a - b)[Math.floor(values.length / 2)];
 }
@@ -196,6 +236,8 @@ function median(...values: number[]) {
 function generatePSDF(shape: Shape) {
   const w = 16;
   const h = 16;
+  const ow = 128;
+  const oh = 128;
 
   const sw = 2048;
   const sh = 2048;
@@ -240,7 +282,8 @@ function generatePSDF(shape: Shape) {
 function generateMSDF(shape: Shape) {
   const w = 8;
   const h = 8;
-
+  const ow = 128;
+  const oh = 128;
   const sw = 2048;
   const sh = 2048;
 
