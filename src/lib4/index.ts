@@ -359,13 +359,13 @@ function generateMSDF(
           p,
           b.nearParam,
         );
-      output.data[x + row * output.width] = distanceMapping.map(
+      output.data[(x + row * output.width) * 3] = distanceMapping.map(
         r.minDistance.distance,
       );
-      output.data[x + row * output.width + 1] = distanceMapping.map(
+      output.data[(x + row * output.width) * 3 + 1] = distanceMapping.map(
         g.minDistance.distance,
       );
-      output.data[x + row * output.width + 2] = distanceMapping.map(
+      output.data[(x + row * output.width) * 3 + 2] = distanceMapping.map(
         b.minDistance.distance,
       );
     }
@@ -446,6 +446,7 @@ export function library(data: ArrayBuffer) {
   const scale = new Vector2(1, 1);
   const translate = new Vector2(0, 0);
   generateMSDF(bitmap, shape, range, scale, translate, {});
+  console.log(bitmap);
 }
 export function isCorner(
   aDir: Vector2,
