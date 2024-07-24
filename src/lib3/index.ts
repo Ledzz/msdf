@@ -15,9 +15,9 @@ export function library(data: ArrayBuffer) {
   document.body.append(svg);
 
   const shape = shapeFromPath(path);
-  edgeColoringSimple(shape, 3);
-  generatePSDF(shape);
-  // generateMSDF(shape);
+  edgeColoringSimple(shape, 0);
+  // generatePSDF(shape);
+  generateMSDF(shape);
 }
 
 type Vector2 = [number, number];
@@ -135,22 +135,8 @@ function debugSDF(
   channels = 1,
   useMedian = false,
 ) {
-  const div = document.createElement("div");
-  div.style.display = "grid";
-  div.style.gridTemplateColumns = `repeat(${sdfw}, 1fr)`;
-  div.style.gridTemplateRows = `repeat(${sdfh}, 1fr)`;
-  div.style.width = "100%";
-  div.style.height = "100%";
-
-  const totalSize = 700;
-
-  div.style.cssText = `
-  display: grid;
-    grid-template-columns: repeat(${sdfw}, ${totalSize / sdfw}px);
-    grid-template-rows: repeat(${sdfh}, ${totalSize / sdfh}px);
-    font-size: 7px;
-  `;
-  document.body.append(div);
+  const ow = 128;
+  const oh = 128;
 
   const grouped =
     channels === 1
@@ -169,6 +155,25 @@ function debugSDF(
 
           return [...acc, [d]];
         }, [] as number[][]);
+  const resized = resize(grouped, sdfw, sdfh, ow, oh);
+
+  const div = document.createElement("div");
+  div.style.display = "grid";
+  div.style.gridTemplateColumns = `repeat(${ow}, 1fr)`;
+  div.style.gridTemplateRows = `repeat(${oh}, 1fr)`;
+  div.style.width = "100%";
+  div.style.height = "100%";
+
+  const totalSize = 700;
+
+  div.style.cssText = `
+  display: grid;
+    grid-template-columns: repeat(${ow}, ${totalSize / ow}px);
+    grid-template-rows: repeat(${oh}, ${totalSize / oh}px);
+    font-size: 7px;
+  `;
+  document.body.append(div);
+
   // const sideCount = Math.sqrt(output.length);
   // for (let x = 0; x < sdfw; x++) {
   //   for (let y = 0; y < outputHeight; y++) {
@@ -176,16 +181,15 @@ function debugSDF(
   //   }
   // }
 
-  const sideCount = Math.sqrt(output.length);
+  const sideCount = Math.sqrt(resized.length);
 
-  div.innerHTML = grouped
+  div.innerHTML = resized
     .map((c, i) => {
       const r = map(channels === 1 ? c[0] : c[0], -1025, 1024, 255, 0);
       const g = map(channels === 1 ? c[0] : c[1], -1025, 1024, 255, 0);
       const b = map(channels === 1 ? c[0] : c[2], -1025, 1024, 255, 0);
-
+      // const v = median(r, g, b) > 128 ? 1024 : -1024;
       const v = median(r, g, b);
-
       const rv = useMedian ? v : r;
       const gv = useMedian ? v : g;
       const bv = useMedian ? v : b;
@@ -199,32 +203,6 @@ function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
 }
 
-// function bilinearSample(values: [number][], x: number, y: number) {
-//   const w = Math.sqrt(values.length);
-//   const h = Math.sqrt(values.length);
-//   // console.log(x, y);
-//   const x0 = Math.floor(x * w);
-//   const y0 = Math.floor(y * h);
-//   const x1 = Math.ceil(x * w);
-//   const y1 = Math.ceil(y * h);
-//
-//   const v00 = values[y0 * h + x0];
-//   const v01 = values[y1 * h + x0];
-//   const v10 = values[y0 * h + x1];
-//   const v11 = values[y1 * h + x1];
-//
-//   const xFrac = x * w - x0;
-//   const yFrac = y * h - y0;
-//
-//   console.log(y0);
-//
-//   const v0 = lerpArray(v00, v01, yFrac);
-//   const v1 = lerpArray(v10, v11, yFrac);
-//
-//   // console.log(x, y, lerpArray(v0, v1, xFrac));
-//   return lerpArray(v0, v1, xFrac);
-// }
-
 function lerpArray(a: number[], b: number[], t: number): number[] {
   return a.map((v, i) => lerp(v, b[i], t));
 }
@@ -236,8 +214,6 @@ function median(...values: number[]) {
 function generatePSDF(shape: Shape) {
   const w = 16;
   const h = 16;
-  const ow = 128;
-  const oh = 128;
 
   const sw = 2048;
   const sh = 2048;
@@ -279,11 +255,48 @@ function generatePSDF(shape: Shape) {
   debugSDF(output, w, h);
 }
 
+function resize(
+  input: number[][],
+  iw: number,
+  ih: number,
+  ow: number,
+  oh: number,
+  channels = 1,
+) {
+  const output: number[][] = [];
+
+  for (let y = 0; y < oh; y++) {
+    for (let x = 0; x < ow; x++) {
+      const px = (x + 0.5) / ow;
+      const py = (y + 0.5) / oh;
+
+      const x0 = clamp(Math.floor(px * iw), 0, iw - 1);
+      const y0 = clamp(Math.floor(py * ih), 0, ih - 1);
+      const x1 = clamp(Math.ceil(px * iw), 0, iw - 1);
+      const y1 = clamp(Math.ceil(py * ih), 0, ih - 1);
+
+      const v00 = input[y0 * iw + x0];
+      const v01 = input[y1 * iw + x0];
+      const v10 = input[y0 * iw + x1];
+      const v11 = input[y1 * iw + x1];
+
+      const xFrac = px * iw - x0;
+      const yFrac = py * ih - y0;
+
+      const v0 = lerpArray(v00, v01, yFrac);
+      const v1 = lerpArray(v10, v11, yFrac);
+      let o = lerpArray(v0, v1, xFrac);
+
+      output[(y * ow + x) * channels] = o;
+    }
+  }
+
+  return output;
+}
+
 function generateMSDF(shape: Shape) {
   const w = 8;
   const h = 8;
-  const ow = 128;
-  const oh = 128;
   const sw = 2048;
   const sh = 2048;
 
@@ -366,7 +379,7 @@ function generateMSDF(shape: Shape) {
       }
     }
   }
-  debugSDF(output, w, h, 3, true);
+  debugSDF(output, w, h, 3);
 }
 
 function distanceToSegment(
