@@ -378,7 +378,7 @@ function distanceToCubic(
   pseudo: boolean,
 ): ReturnType<typeof distanceToSegment> {
   // TODO: Calculate distance to cubic segment
-  return [Infinity, 0, [0, 0]];
+  throw new Error("distanceToCubic not implemented");
 }
 function clamp(param: number, a: number, b: number) {
   return Math.min(Math.max(param, a), b);
@@ -478,7 +478,7 @@ function getDirectionLine(segment: LineSegment) {
 }
 function getDirectionCubic(segment: CubicSegment, param: number) {
   // TODO: Calculate direction for cubic segment
-  return [0, 0] as Vector2;
+  throw new Error("getDirectionCubic not implemented");
 }
 
 function getDirection(edge: Edge, param: number) {
@@ -527,21 +527,8 @@ function edgeColoringSimple(shape: Shape, crossThreshold: number) {
       });
     } else if (corners.length === 1) {
       // TODO: Teardrop case
+      throw new Error("Teardrop case not implemented");
     } else {
-      // int cornerCount = (int) corners.size();
-      // int spline = 0;
-      // int start = corners[0];
-      // int m = (int) contour->edges.size();
-      // switchColor(color, seed);
-      // EdgeColor initialColor = color;
-      // for (int i = 0; i < m; ++i) {
-      //   int index = (start+i)%m;
-      //   if (spline+1 < cornerCount && corners[spline+1] == index) {
-      //     ++spline;
-      //     switchColor(color, seed, EdgeColor((spline == cornerCount-1)*initialColor));
-      //   }
-      //   contour->edges[index]->color = color;
-      // }
       const cornerCount = corners.length;
       let spline = 0;
       let start = corners[0];
