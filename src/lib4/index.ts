@@ -1,5 +1,14 @@
 import * as typr from "@fredli74/typr";
 import { Path } from "@fredli74/typr";
+import {
+  Mesh,
+  PerspectiveCamera,
+  PlaneGeometry,
+  Scene,
+  ShaderMaterial,
+  Texture,
+  WebGLRenderer,
+} from "three";
 
 type DistanceWithParam = [SignedDistance, number];
 
@@ -467,19 +476,82 @@ function edgeColoringSimple(shape: Shape, crossThreshold: number) {
 }
 
 function renderBitmapToCanvas(bitmap: Bitmap) {
-  const canvas = document.createElement("canvas");
-  canvas.width = bitmap.width;
-  canvas.height = bitmap.height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    throw new Error("No context");
-  }
-  const imageData = ctx.createImageData(bitmap.width, bitmap.height);
+  // const canvas = document.createElement("canvas");
+  // canvas.width = bitmap.width;
+  // canvas.height = bitmap.height;
+  // const ctx = canvas.getContext("2d");
+  // if (!ctx) {
+  //   throw new Error("No context");
+  // }
+  // const imageData = new ImageData(bitmap.width, bitmap.height);
+  // for (let i = 0; i < bitmap.data.length; ++i) {
+  //   imageData.data[i] = bitmap.data[i] * 255;
+  // }
+  // ctx.putImageData(imageData, 0, 0);
+  // document.body.append(canvas);
+  //
+  // return;
+
+  const imageData = new ImageData(bitmap.width, bitmap.height);
   for (let i = 0; i < bitmap.data.length; ++i) {
     imageData.data[i] = bitmap.data[i] * 255;
   }
-  ctx.putImageData(imageData, 0, 0);
-  document.body.append(canvas);
+
+  const scene = new Scene();
+  const camera = new PerspectiveCamera(
+    75,
+    bitmap.width / bitmap.height,
+    0.1,
+    1000,
+  );
+
+  const renderer = new WebGLRenderer();
+  renderer.setSize(bitmap.width * 10, bitmap.height * 10);
+  renderer.setAnimationLoop(animate);
+  document.body.appendChild(renderer.domElement);
+
+  const geometry = new PlaneGeometry(1, 1, 1);
+  // const material = new MeshBasicMaterial({ color: 0x00ff00 });
+  const map = new Texture(imageData);
+  map.needsUpdate = true;
+
+  const material = new ShaderMaterial({
+    fragmentShader: `
+   uniform sampler2D tex;
+ varying vec2 vUv;
+ 
+ float median(float r, float g, float b) {
+            return max(min(r, g), min(max(r, g), b));
+        }
+ 
+
+   void main() {
+        vec4 color = texture2D(tex, vUv);
+        float m = smoothstep(0.5, 0.51, median(color.r, color.g, color.b));
+        gl_FragColor = vec4(m, 0.0, 0.0, 1.0);
+    }
+   
+   `,
+    vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+    uniforms: {
+      tex: { value: map },
+    },
+  });
+  console.log(imageData);
+  const cube = new Mesh(geometry, material);
+  scene.add(cube);
+
+  camera.position.z = 0.652;
+
+  function animate() {
+    renderer.render(scene, camera);
+  }
 }
 
 export function library(data: ArrayBuffer) {
