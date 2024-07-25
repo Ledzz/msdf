@@ -9,6 +9,8 @@ abstract class Segment {
   abstract signedDistance(p: Vector2): DistanceWithParam;
 
   abstract direction(p: number);
+
+  abstract point(param: number);
 }
 class LineSegment extends Segment {
   points: [Vector2, Vector2];
@@ -44,6 +46,10 @@ class LineSegment extends Segment {
 
   direction(_p: number) {
     return this.points[1].sub(this.points[0]);
+  }
+
+  point(param: number) {
+    return Vector2.mix(this.points[0], this.points[1], param);
   }
 }
 class CubicSegment extends Segment {
@@ -139,13 +145,41 @@ class Edge {
   }
   color: number;
   distanceToPerpendicularDistance(
-    minDistance: SignedDistance,
-    p: Vector2,
-    nearParam: number,
-  ) {}
+    distance: SignedDistance,
+    origin: Vector2,
+    param: number,
+  ) {
+    if (param < 0) {
+      const dir = this.direction(0).normalize();
+      const aq = origin.sub(this.point(0));
+      const ts = aq.dot(dir);
+      if (ts < 0) {
+        const perpendicularDistance = aq.cross(dir);
+        if (Math.abs(perpendicularDistance) <= Math.abs(distance.distance)) {
+          distance.distance = perpendicularDistance;
+          distance.dot = 0;
+        }
+      }
+    } else if (param > 1) {
+      const dir = this.direction(1).normalize();
+      const bq = origin.sub(this.point(1));
+      const ts = bq.dot(dir);
+      if (ts > 0) {
+        const perpendicularDistance = bq.cross(dir);
+        if (Math.abs(perpendicularDistance) <= Math.abs(distance.distance)) {
+          distance.distance = perpendicularDistance;
+          distance.dot = 0;
+        }
+      }
+    }
+  }
 
   direction(p: number) {
     return this.segment.direction(p);
+  }
+
+  point(param: number) {
+    return this.segment.point(param);
   }
 }
 // Helper function for multiplying a number with a Range
@@ -261,6 +295,10 @@ class Vector2 {
     const len = this.length();
     return new Vector2(this.x / len, this.y / len);
   }
+
+  static mix(a: Vector2, b: Vector2, param: number) {
+    return new Vector2(a.x + (b.x - a.x) * param, a.y + (b.y - a.y) * param);
+  }
 }
 type ErrorCorrectionConfig = {};
 class Bitmap {
@@ -299,77 +337,80 @@ function generateMSDF(
   errorCorrectionConfig: ErrorCorrectionConfig,
 ) {
   const distanceMapping = new DistanceMapping(range);
+  const iw = 2048;
+  const ih = 2048;
 
   for (let y = 0; y < output.height; ++y) {
     const row = shape.inverseYAxis ? output.height - y - 1 : y;
     for (let x = 0; x < output.width; ++x) {
-      const p = new Vector2(x + 0.5, y + 0.5).div(scale).sub(translate);
-
-      const r: Colored = {
-        minDistance: new SignedDistance(Infinity, Infinity),
-        nearEdge: null,
-        nearParam: 0,
-      };
-      const g: Colored = {
-        minDistance: new SignedDistance(Infinity, Infinity),
-        nearEdge: null,
-        nearParam: 0,
-      };
-      const b: Colored = {
-        minDistance: new SignedDistance(Infinity, Infinity),
-        nearEdge: null,
-        nearParam: 0,
-      };
-
-      for (const contour of shape.contours) {
-        for (const edge of contour.edges) {
-          const [distance, param] = edge.signedDistance(p);
-          if (edge.color & RED && distance.lt(r.minDistance)) {
-            r.minDistance = distance;
-            r.nearEdge = edge;
-            r.nearParam = param;
-          }
-          if (edge.color & GREEN && distance.lt(g.minDistance)) {
-            g.minDistance = distance;
-            g.nearEdge = edge;
-            g.nearParam = param;
-          }
-          if (edge.color & BLUE && distance.lt(b.minDistance)) {
-            b.minDistance = distance;
-            b.nearEdge = edge;
-            b.nearParam = param;
-          }
-        }
-      }
-      if (r.nearEdge)
-        r.nearEdge.distanceToPerpendicularDistance(
-          r.minDistance,
-          p,
-          r.nearParam,
-        );
-      if (g.nearEdge)
-        g.nearEdge.distanceToPerpendicularDistance(
-          g.minDistance,
-          p,
-          g.nearParam,
-        );
-      if (b.nearEdge)
-        b.nearEdge.distanceToPerpendicularDistance(
-          b.minDistance,
-          p,
-          b.nearParam,
-        );
-      output.data[(x + row * output.width) * 3] = distanceMapping.map(
-        r.minDistance.distance,
-      );
-      output.data[(x + row * output.width) * 3 + 1] = distanceMapping.map(
-        g.minDistance.distance,
-      );
-      output.data[(x + row * output.width) * 3 + 2] = distanceMapping.map(
-        b.minDistance.distance,
-      );
+      const index = (x + row * output.width) * 4;
+      const ox = (x * iw) / output.width;
+      const oy = (y * ih) / output.height;
+      const { r, g, b } = asdf(shape, ox, oy, scale, translate);
+      output.data[index] = distanceMapping.map(r.minDistance.distance);
+      output.data[index + 1] = distanceMapping.map(g.minDistance.distance);
+      output.data[index + 2] = distanceMapping.map(b.minDistance.distance);
+      output.data[index + 3] = 1;
     }
   }
+}
+
+function asdf(
+  shape: Shape,
+  x: number,
+  y: number,
+  scale: Vector2,
+  translate: Vector2,
+) {
+  const p = new Vector2(x + 0.5, y + 0.5).div(scale).sub(translate);
+
+  const r: Colored = {
+    minDistance: new SignedDistance(Infinity, Infinity),
+    nearEdge: null,
+    nearParam: 0,
+  };
+  const g: Colored = {
+    minDistance: new SignedDistance(Infinity, Infinity),
+    nearEdge: null,
+    nearParam: 0,
+  };
+  const b: Colored = {
+    minDistance: new SignedDistance(Infinity, Infinity),
+    nearEdge: null,
+    nearParam: 0,
+  };
+
+  for (const contour of shape.contours) {
+    for (const edge of contour.edges) {
+      const [distance, param] = edge.signedDistance(p);
+      if (edge.color & RED && distance.lt(r.minDistance)) {
+        r.minDistance = distance;
+        r.nearEdge = edge;
+        r.nearParam = param;
+      }
+      if (edge.color & GREEN && distance.lt(g.minDistance)) {
+        g.minDistance = distance;
+        g.nearEdge = edge;
+        g.nearParam = param;
+      }
+      if (edge.color & BLUE && distance.lt(b.minDistance)) {
+        b.minDistance = distance;
+        b.nearEdge = edge;
+        b.nearParam = param;
+      }
+    }
+  }
+  if (r.nearEdge) {
+    r.nearEdge.distanceToPerpendicularDistance(r.minDistance, p, r.nearParam);
+  }
+  if (g.nearEdge) {
+    g.nearEdge.distanceToPerpendicularDistance(g.minDistance, p, g.nearParam);
+  }
+  if (b.nearEdge) {
+    b.nearEdge.distanceToPerpendicularDistance(b.minDistance, p, b.nearParam);
+  }
+
+  return { r, g, b };
 }
 
 function edgeColoringSimple(shape: Shape, crossThreshold: number) {
@@ -433,16 +474,9 @@ function renderBitmapToCanvas(bitmap: Bitmap) {
   if (!ctx) {
     throw new Error("No context");
   }
-  const channels = bitmap.data.length / (bitmap.width * bitmap.height);
   const imageData = ctx.createImageData(bitmap.width, bitmap.height);
   for (let i = 0; i < bitmap.data.length; ++i) {
-    for (let k = 0; k < channels; ++k) {
-      imageData.data[i * channels + k] = bitmap.data[i] * 255;
-    }
-
-    for (let k = channels; k < 4; ++k) {
-      imageData.data[i * channels + k] = 255;
-    }
+    imageData.data[i] = bitmap.data[i] * 255;
   }
   ctx.putImageData(imageData, 0, 0);
   document.body.append(canvas);
@@ -469,6 +503,9 @@ export function library(data: ArrayBuffer) {
   const scale = new Vector2(1, 1);
   const translate = new Vector2(0, 0);
   generateMSDF(bitmap, shape, range, scale, translate, {});
+
+  console.log(asdf(shape, 0, 0, scale, translate));
+
   renderBitmapToCanvas(bitmap);
 }
 export function isCorner(
