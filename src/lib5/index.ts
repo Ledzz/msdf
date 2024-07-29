@@ -14,10 +14,8 @@ declare var Module;
 // console.log(Module);
 
 export function library(data: ArrayBuffer) {
-  const shape = new Module.Shape();
-
   const font = new typr.Font(data);
-  const glyph = font.stringToGlyphs("I")[0];
+  const glyph = font.stringToGlyphs("A")[0];
   const path = font.glyphToPath(glyph);
 
   console.log(font);
@@ -34,13 +32,13 @@ export function library(data: ArrayBuffer) {
   const cmds = new Module.VectorInt();
 
   for (let i = 0; i < path.crds.length; i++) {
-    crds.push_back(path.crds[i] / 10);
+    crds.push_back(path.crds[i]);
   }
   for (let i = 0; i < path.cmds.length; i++) {
     cmds.push_back(path.cmds[i].charCodeAt(0));
   }
 
-  const res = Module.generateMSDF(crds, cmds);
+  const res = Module.generateMSDF(crds, cmds, -0.5, 0.5, 0.01, 0.125, 0.125);
 
   const arr = [];
 
