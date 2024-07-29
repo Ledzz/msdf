@@ -37,7 +37,7 @@ export function library(data: ArrayBuffer) {
     cmds.push_back(path.cmds[i].charCodeAt(0));
   }
 
-  const res = Module.generateMSDF(crds, cmds, -0.5, 0.5, 0.01, 0.125, 0.125);
+  const res = Module.generateMSDF(crds, cmds, -0.5, 1, 1 / 100, 0, 0);
 
   const arr = [];
 
