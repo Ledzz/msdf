@@ -3264,6 +3264,11 @@ function dbg(...args) {
       return Emval.toHandle(v);
     };
 
+  var _emscripten_console_log = (str) => {
+      assert(typeof str == 'number');
+      console.log(UTF8ToString(str));
+    };
+
   var getHeapMax = () =>
       HEAPU8.length;
   
@@ -3437,6 +3442,8 @@ var wasmImports = {
   /** @export */
   _emval_take_value: __emval_take_value,
   /** @export */
+  emscripten_console_log: _emscripten_console_log,
+  /** @export */
   emscripten_resize_heap: _emscripten_resize_heap,
   /** @export */
   fd_close: _fd_close,
@@ -3477,6 +3484,8 @@ var wasmImports = {
   /** @export */
   invoke_viid,
   /** @export */
+  invoke_viif,
+  /** @export */
   invoke_viii,
   /** @export */
   invoke_viiid,
@@ -3490,9 +3499,9 @@ var ___wasm_call_ctors = createExportWrapper('__wasm_call_ctors', 0);
 var ___getTypeName = createExportWrapper('__getTypeName', 1);
 var ___cxa_free_exception = createExportWrapper('__cxa_free_exception', 1);
 var _fflush = createExportWrapper('fflush', 1);
-var _malloc = createExportWrapper('malloc', 1);
+var _malloc = Module['_malloc'] = createExportWrapper('malloc', 1);
 var _strerror = createExportWrapper('strerror', 1);
-var _free = createExportWrapper('free', 1);
+var _free = Module['_free'] = createExportWrapper('free', 1);
 var _setThrew = createExportWrapper('setThrew', 2);
 var __emscripten_tempret_set = createExportWrapper('_emscripten_tempret_set', 1);
 var _emscripten_stack_init = () => (_emscripten_stack_init = wasmExports['emscripten_stack_init'])();
@@ -3712,6 +3721,17 @@ function invoke_v(index) {
   var sp = stackSave();
   try {
     getWasmTableEntry(index)();
+  } catch(e) {
+    stackRestore(sp);
+    if (!(e instanceof EmscriptenEH)) throw e;
+    _setThrew(1, 0);
+  }
+}
+
+function invoke_viif(index,a1,a2,a3) {
+  var sp = stackSave();
+  try {
+    getWasmTableEntry(index)(a1,a2,a3);
   } catch(e) {
     stackRestore(sp);
     if (!(e instanceof EmscriptenEH)) throw e;

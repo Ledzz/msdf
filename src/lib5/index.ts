@@ -20,6 +20,8 @@ export function library(data: ArrayBuffer) {
   const glyph = font.stringToGlyphs("Q")[0];
   const path = font.glyphToPath(glyph);
 
+  console.log(Module);
+
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute(
     "viewBox",
@@ -31,9 +33,18 @@ export function library(data: ArrayBuffer) {
   svg.innerHTML = `<path d="${font.pathToSVG(path)}" fill="black" />`;
   document.body.append(svg);
 
+  const width = 32;
+  const height = 32;
+  const arrayLength = width * height * 3;
+  const floatArray = new Float32Array(arrayLength);
+
+  const dataPtr = Module._malloc(
+    floatArray.length * floatArray.BYTES_PER_ELEMENT,
+  );
+  Module.HEAPF32.set(floatArray, dataPtr >> 2);
+
   const crds = new Module.VectorDouble();
   const cmds = new Module.VectorInt();
-
   for (let i = 0; i < path.crds.length; i++) {
     crds.push_back(path.crds[i]);
   }
@@ -43,22 +54,24 @@ export function library(data: ArrayBuffer) {
 
   console.timeEnd("parse glyph");
   console.time("generate msdf");
-  const res = Module.generateMSDF(crds, cmds, -0.5, 1, 1 / 80, 0, 0);
+
+  Module.generateMSDF(dataPtr, crds, cmds, -0.5, 1, 1 / 80, 0, 0, 3);
   console.timeEnd("generate msdf");
-  const arr = [];
 
-  for (let i = 0; i < res.size(); i++) {
-    arr.push(res.get(i));
-  }
+  const resultArray = Module.HEAPF32.subarray(
+    dataPtr >> 2,
+    (dataPtr >> 2) + arrayLength,
+  );
 
-  renderBitmapToCanvas(arr);
+  renderBitmapToCanvas(resultArray);
+  Module._free(dataPtr);
 
   crds.delete();
   cmds.delete();
   console.timeEnd("font");
 }
 
-function renderBitmapToCanvas(data: number[], width = 32, height = 32) {
+function renderBitmapToCanvas(data: Float32Array, width = 32, height = 32) {
   const imageData = new ImageData(width, height);
 
   for (let i = 0; i < width * height; i++) {
