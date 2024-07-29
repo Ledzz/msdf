@@ -17,8 +17,10 @@ export function library(data: ArrayBuffer) {
   const shape = new Module.Shape();
 
   const font = new typr.Font(data);
-  const glyph = font.stringToGlyphs("A")[0];
+  const glyph = font.stringToGlyphs("I")[0];
   const path = font.glyphToPath(glyph);
+
+  console.log(font);
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 2000 2000");
@@ -27,15 +29,13 @@ export function library(data: ArrayBuffer) {
 
   svg.innerHTML = `<path d="${font.pathToSVG(path)}" fill="black" />`;
   document.body.append(svg);
-  // console.log(path.cmds);
+
   const crds = new Module.VectorDouble();
   const cmds = new Module.VectorInt();
 
-  // console.log(Module);
   for (let i = 0; i < path.crds.length; i++) {
-    crds.push_back(path.crds[i]);
+    crds.push_back(path.crds[i] / 10);
   }
-  //
   for (let i = 0; i < path.cmds.length; i++) {
     cmds.push_back(path.cmds[i].charCodeAt(0));
   }
@@ -65,31 +65,12 @@ export function library(data: ArrayBuffer) {
 }
 
 function renderBitmapToCanvas(data: number[], width = 32, height = 32) {
-  // const canvas = document.createElement("canvas");
-  // canvas.width = bitmap.width;
-  // canvas.height = bitmap.height;
-  // const ctx = canvas.getContext("2d");
-  // if (!ctx) {
-  //   throw new Error("No context");
-  // }
-  // const imageData = new ImageData(bitmap.width, bitmap.height);
-  // for (let i = 0; i < bitmap.data.length; ++i) {
-  //   imageData.data[i] = bitmap.data[i] * 255;
-  // }
-  // ctx.putImageData(imageData, 0, 0);
-  // document.body.append(canvas);
-  //
-  // return;
-
   const imageData = new ImageData(width, height);
-  // for (let i = 0; i < data.length; ++i) {
-  //   imageData.data[i] = data[i] * 255;
-  // }
 
   for (let i = 0; i < width * height; i++) {
-    imageData.data[4 * i] = data[i] * 3;
-    imageData.data[4 * i + 1] = data[i + 1] * 3;
-    imageData.data[4 * i + 2] = data[i + 2] * 3;
+    imageData.data[4 * i] = data[3 * i];
+    imageData.data[4 * i + 1] = data[3 * i + 1];
+    imageData.data[4 * i + 2] = data[3 * i + 2];
     imageData.data[4 * i + 3] = 255;
   }
 

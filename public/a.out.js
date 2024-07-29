@@ -3319,11 +3319,6 @@ function dbg(...args) {
       return Emval.toHandle(v);
     };
 
-  var _emscripten_console_log = (str) => {
-      assert(typeof str == 'number');
-      console.log(UTF8ToString(str));
-    };
-
   var getHeapMax = () =>
       HEAPU8.length;
   
@@ -3500,8 +3495,6 @@ var wasmImports = {
   _emval_decref: __emval_decref,
   /** @export */
   _emval_take_value: __emval_take_value,
-  /** @export */
-  emscripten_console_log: _emscripten_console_log,
   /** @export */
   emscripten_resize_heap: _emscripten_resize_heap,
   /** @export */
