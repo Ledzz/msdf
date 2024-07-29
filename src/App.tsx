@@ -1,5 +1,5 @@
 import "./App.css";
-import { library } from "./lib4";
+import { library } from "./lib5";
 
 async function loadFont() {
   const font = await (await fetch("/Inter-Bold.otf")).arrayBuffer();
