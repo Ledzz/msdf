@@ -15,12 +15,16 @@ declare var Module;
 
 export function library(data: ArrayBuffer) {
   console.time("font");
+  console.time("parse glyph");
   const font = new typr.Font(data);
   const glyph = font.stringToGlyphs("Q")[0];
   const path = font.glyphToPath(glyph);
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("viewBox", "0 0 2000 2000");
+  svg.setAttribute(
+    "viewBox",
+    `0 0 ${font.head?.unitsPerEm}  ${font.head?.unitsPerEm}`,
+  );
   svg.setAttribute("width", "100");
   svg.setAttribute("height", "100");
 
@@ -37,8 +41,10 @@ export function library(data: ArrayBuffer) {
     cmds.push_back(path.cmds[i].charCodeAt(0));
   }
 
-  const res = Module.generateMSDF(crds, cmds, -0.5, 1, 1 / 100, 0, 0);
-
+  console.timeEnd("parse glyph");
+  console.time("generate msdf");
+  const res = Module.generateMSDF(crds, cmds, -0.5, 1, 1 / 80, 0, 0);
+  console.timeEnd("generate msdf");
   const arr = [];
 
   for (let i = 0; i < res.size(); i++) {
