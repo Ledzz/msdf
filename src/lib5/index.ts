@@ -14,11 +14,10 @@ declare var Module;
 // console.log(Module);
 
 export function library(data: ArrayBuffer) {
+  console.time("font");
   const font = new typr.Font(data);
-  const glyph = font.stringToGlyphs("A")[0];
+  const glyph = font.stringToGlyphs("Q")[0];
   const path = font.glyphToPath(glyph);
-
-  console.log(font);
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 2000 2000");
@@ -45,21 +44,12 @@ export function library(data: ArrayBuffer) {
   for (let i = 0; i < res.size(); i++) {
     arr.push(res.get(i));
   }
-  console.log(arr);
 
   renderBitmapToCanvas(arr);
-  // const generateMSDF = Module.cwrap("generateOurMSDF", "null", [
-  //   "array",
-  //   "array",
-  // ]);
-  //
-  // generateMSDF(
-  //   path.crds,
-  //   path.cmds.map((c) => c.charCodeAt(0)),
-  // );
+
   crds.delete();
   cmds.delete();
-  // console.log(shape, contour, edge);
+  console.timeEnd("font");
 }
 
 function renderBitmapToCanvas(data: number[], width = 32, height = 32) {
@@ -71,8 +61,6 @@ function renderBitmapToCanvas(data: number[], width = 32, height = 32) {
     imageData.data[4 * i + 2] = data[3 * i + 2];
     imageData.data[4 * i + 3] = 255;
   }
-
-  console.log(imageData.data);
 
   const scene = new Scene();
   const camera = new PerspectiveCamera(75, width / height, 0.1, 1000);
