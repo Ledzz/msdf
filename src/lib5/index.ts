@@ -9,6 +9,7 @@ import {
 } from "three";
 
 import { Font, parse } from "opentype.js";
+import { MaxRectsPacker } from "maxrects-packer";
 
 declare var Module;
 
@@ -16,116 +17,158 @@ export function library(data: ArrayBuffer) {
   const font = parse(data);
   const totalWidth = 128;
   const totalHeight = 128;
-  const imageData = new ImageData(totalWidth, totalHeight);
+  const output = new Uint8ClampedArray(totalWidth * totalHeight * 4);
+  const imageData = new ImageData(output, totalWidth, totalHeight);
 
   const fontSize = 42;
 
+  const packer = new MaxRectsPacker(totalWidth, totalHeight);
+
   console.time("renderGlyph");
-  renderGlyph(font, "A", fontSize, imageData, 0, 0);
-  renderGlyph(font, "B", fontSize, imageData, -40, 0);
-  renderGlyph(font, "C", fontSize, imageData, -80, 0);
-  renderGlyph(font, "D", fontSize, imageData, 0, -40);
-  renderGlyph(font, "E", fontSize, imageData, -40, -40);
-  renderGlyph(font, "F", fontSize, imageData, -80, -40);
+
+  addGlyphs(packer, font, fontSize, "ABC", output, totalWidth, totalHeight);
+
+  addGlyphs(packer, font, fontSize, "DEF", output, totalWidth, totalHeight);
+
+  addGlyphs(packer, font, fontSize, "GHI", output, totalWidth, totalHeight);
+
   console.timeEnd("renderGlyph");
 
   renderBitmapToCanvas(imageData);
 }
 
-function renderGlyph(
+function addGlyphs(
+  packer: MaxRectsPacker,
   font: Font,
-  glyph: string,
   fontSize: number,
-  imageData: ImageData,
-  x: number,
-  y: number,
+  glyphs: string,
+  output: Uint8ClampedArray,
+  totalWidth: number,
+  totalHeight: number,
 ) {
-  const glyph1 = font.charToGlyph(glyph);
+  const rectangles = glyphs.split("").map((g) => {
+    const glyph = font.charToGlyph(g);
 
-  const commands = glyph1.getPath(0, 0, fontSize).commands;
-  const bBox = glyph1.getPath(0, 0, fontSize).getBoundingBox();
+    const commands = glyph.getPath(0, 0, fontSize).commands;
+    const bBox = glyph.getPath(0, 0, fontSize).getBoundingBox();
 
-  const distanceRange = 4;
-  const pad = distanceRange >> 1;
+    const distanceRange = 4;
+    const pad = distanceRange >> 1;
 
-  const width = Math.round(bBox.x2 - bBox.x1) + pad + pad;
-  const height = Math.round(bBox.y2 - bBox.y1) + pad + pad;
-  const xOffset = Math.round(-bBox.x1) + pad;
-  const yOffset = Math.round(-bBox.y1) + pad;
+    const width = Math.round(bBox.x2 - bBox.x1) + pad + pad;
+    const height = Math.round(bBox.y2 - bBox.y1) + pad + pad;
+    const xOffset = Math.round(-bBox.x1) + pad;
+    const yOffset = Math.round(-bBox.y1) + pad;
 
-  const arrayLength = width * height * 3;
-  const floatArray = new Float32Array(arrayLength);
+    const arrayLength = width * height * 3;
+    const floatArray = new Float32Array(arrayLength);
 
-  const dataPtr = Module._malloc(
-    floatArray.length * floatArray.BYTES_PER_ELEMENT,
-  );
-  Module.HEAPF32.set(floatArray, dataPtr >> 2);
+    const dataPtr = Module._malloc(
+      floatArray.length * floatArray.BYTES_PER_ELEMENT,
+    );
+    Module.HEAPF32.set(floatArray, dataPtr >> 2);
 
-  const crds = new Module.VectorDouble();
-  const cmds = new Module.VectorInt();
+    const crds = new Module.VectorDouble();
+    const cmds = new Module.VectorInt();
 
-  commands.forEach((command) => {
-    const { type, x, y, x1, y1, x2, y2 } = command as any; // TODO: Cubic, quadratic
+    commands.forEach((command) => {
+      const { type, x, y, x1, y1, x2, y2 } = command as any; // TODO: Cubic, quadratic
 
-    cmds.push_back(type.charCodeAt(0));
+      cmds.push_back(type.charCodeAt(0));
 
-    switch (type) {
-      case "M":
-      case "L":
-        crds.push_back(x);
-        crds.push_back(y);
-        break;
-      case "C":
-        crds.push_back(x1);
-        crds.push_back(y1);
-        crds.push_back(x2);
-        crds.push_back(y2);
-        crds.push_back(x);
-        crds.push_back(y);
-        break;
-      case "Z":
-        break;
-      default:
-        throw new Error(`Unknown command: ${type}`);
-    }
+      switch (type) {
+        case "M":
+        case "L":
+          crds.push_back(x);
+          crds.push_back(y);
+          break;
+        case "C":
+          crds.push_back(x1);
+          crds.push_back(y1);
+          crds.push_back(x2);
+          crds.push_back(y2);
+          crds.push_back(x);
+          crds.push_back(y);
+          break;
+        case "Z":
+          break;
+        default:
+          throw new Error(`Unknown command: ${type}`);
+      }
+    });
+
+    Module.generateMSDF(
+      dataPtr,
+      crds,
+      cmds,
+      width,
+      height,
+      distanceRange,
+      1,
+      xOffset,
+      yOffset,
+      3,
+    );
+
+    const resultTmp = Module.HEAPF32.subarray(
+      dataPtr >> 2,
+      (dataPtr >> 2) + arrayLength,
+    ) as Float32Array;
+
+    const result = resultTmp.slice();
+
+    Module._free(dataPtr);
+
+    crds.delete();
+    cmds.delete();
+    //
+    // placeOnImageData(
+    //   result,
+    //   width,
+    //   height,
+    //   output,
+    //   totalWidth,
+    //   totalHeight,0,0
+    // );
+
+    return { width, height, result };
   });
 
-  Module.generateMSDF(
-    dataPtr,
-    crds,
-    cmds,
-    width,
-    height,
-    distanceRange,
-    1,
-    xOffset,
-    yOffset,
-    3,
-  );
+  packer.addArray(rectangles);
 
-  const resultArray = Module.HEAPF32.subarray(
-    dataPtr >> 2,
-    (dataPtr >> 2) + arrayLength,
-  );
+  console.log(packer.bins);
 
-  placeOnImageData(resultArray, width, height, imageData, x, y);
-  Module._free(dataPtr);
+  if (packer.bins.length > 1) {
+    throw new Error("More that one bin");
+  }
 
-  crds.delete();
-  cmds.delete();
+  packer.bins.forEach((bin) => {
+    bin.rects.forEach(({ result, width, height, x, y }) => {
+      placeOnImageData(
+        result,
+        width,
+        height,
+        output,
+        totalWidth,
+        totalHeight,
+        -x,
+        -y,
+      );
+    });
+  });
 }
 
 function placeOnImageData(
   data: Float32Array,
   iw: number,
   ih: number,
-  imageData: ImageData,
+  output: Uint8ClampedArray,
+  width: number,
+  height: number,
   offsetX: number,
   offsetY: number,
 ) {
-  const { width, height } = imageData;
-  const { data: destData } = imageData;
-
+  console.log(iw, ih, width, height, offsetX, offsetY);
   for (let y = 0; y < height; y++) {
     const dy = y + offsetY;
     if (dy < 0 || dy >= ih) {
@@ -141,10 +184,10 @@ function placeOnImageData(
       const srcIdx = (dy * iw + dx) * 3;
       const destIdx = (y * width + x) * 4;
 
-      destData[destIdx] = data[srcIdx] * 255;
-      destData[destIdx + 1] = data[srcIdx + 1] * 255;
-      destData[destIdx + 2] = data[srcIdx + 2] * 255;
-      destData[destIdx + 3] = 255;
+      output[destIdx] = data[srcIdx] * 255;
+      output[destIdx + 1] = data[srcIdx + 1] * 255;
+      output[destIdx + 2] = data[srcIdx + 2] * 255;
+      output[destIdx + 3] = 255;
     }
   }
 }
