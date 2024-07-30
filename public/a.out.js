@@ -3264,11 +3264,6 @@ function dbg(...args) {
       return Emval.toHandle(v);
     };
 
-  var _emscripten_console_log = (str) => {
-      assert(typeof str == 'number');
-      console.log(UTF8ToString(str));
-    };
-
   var getHeapMax = () =>
       HEAPU8.length;
   
@@ -3442,8 +3437,6 @@ var wasmImports = {
   /** @export */
   _emval_take_value: __emval_take_value,
   /** @export */
-  emscripten_console_log: _emscripten_console_log,
-  /** @export */
   emscripten_resize_heap: _emscripten_resize_heap,
   /** @export */
   fd_close: _fd_close,
@@ -3483,8 +3476,6 @@ var wasmImports = {
   invoke_vii,
   /** @export */
   invoke_viid,
-  /** @export */
-  invoke_viif,
   /** @export */
   invoke_viii,
   /** @export */
@@ -3721,17 +3712,6 @@ function invoke_v(index) {
   var sp = stackSave();
   try {
     getWasmTableEntry(index)();
-  } catch(e) {
-    stackRestore(sp);
-    if (!(e instanceof EmscriptenEH)) throw e;
-    _setThrew(1, 0);
-  }
-}
-
-function invoke_viif(index,a1,a2,a3) {
-  var sp = stackSave();
-  try {
-    getWasmTableEntry(index)(a1,a2,a3);
   } catch(e) {
     stackRestore(sp);
     if (!(e instanceof EmscriptenEH)) throw e;

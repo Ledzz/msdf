@@ -1,4 +1,3 @@
-import * as typr from "@fredli74/typr";
 import {
   Mesh,
   PerspectiveCamera,
@@ -9,32 +8,51 @@ import {
   WebGLRenderer,
 } from "three";
 
+import { Font, parse } from "opentype.js";
+
 declare var Module;
 
-// console.log(Module);
-
 export function library(data: ArrayBuffer) {
-  console.time("font");
-  console.time("parse glyph");
-  const font = new typr.Font(data);
-  const glyph = font.stringToGlyphs("Q")[0];
-  const path = font.glyphToPath(glyph);
+  const font = parse(data);
+  const totalWidth = 128;
+  const totalHeight = 128;
+  const imageData = new ImageData(totalWidth, totalHeight);
 
-  console.log(Module);
+  const fontSize = 42;
 
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute(
-    "viewBox",
-    `0 0 ${font.head?.unitsPerEm}  ${font.head?.unitsPerEm}`,
-  );
-  svg.setAttribute("width", "100");
-  svg.setAttribute("height", "100");
+  console.time("renderGlyph");
+  renderGlyph(font, "A", fontSize, imageData, 0, 0);
+  renderGlyph(font, "B", fontSize, imageData, -40, 0);
+  renderGlyph(font, "C", fontSize, imageData, -80, 0);
+  renderGlyph(font, "D", fontSize, imageData, 0, -40);
+  renderGlyph(font, "E", fontSize, imageData, -40, -40);
+  renderGlyph(font, "F", fontSize, imageData, -80, -40);
+  console.timeEnd("renderGlyph");
 
-  svg.innerHTML = `<path d="${font.pathToSVG(path)}" fill="black" />`;
-  document.body.append(svg);
+  renderBitmapToCanvas(imageData);
+}
 
-  const width = 32;
-  const height = 32;
+function renderGlyph(
+  font: Font,
+  glyph: string,
+  fontSize: number,
+  imageData: ImageData,
+  x: number,
+  y: number,
+) {
+  const glyph1 = font.charToGlyph(glyph);
+
+  const commands = glyph1.getPath(0, 0, fontSize).commands;
+  const bBox = glyph1.getPath(0, 0, fontSize).getBoundingBox();
+
+  const distanceRange = 4;
+  const pad = distanceRange >> 1;
+
+  const width = Math.round(bBox.x2 - bBox.x1) + pad + pad;
+  const height = Math.round(bBox.y2 - bBox.y1) + pad + pad;
+  const xOffset = Math.round(-bBox.x1) + pad;
+  const yOffset = Math.round(-bBox.y1) + pad;
+
   const arrayLength = width * height * 3;
   const floatArray = new Float32Array(arrayLength);
 
@@ -45,51 +63,105 @@ export function library(data: ArrayBuffer) {
 
   const crds = new Module.VectorDouble();
   const cmds = new Module.VectorInt();
-  for (let i = 0; i < path.crds.length; i++) {
-    crds.push_back(path.crds[i]);
-  }
-  for (let i = 0; i < path.cmds.length; i++) {
-    cmds.push_back(path.cmds[i].charCodeAt(0));
-  }
 
-  console.timeEnd("parse glyph");
-  console.time("generate msdf");
+  commands.forEach((command) => {
+    const { type, x, y, x1, y1, x2, y2 } = command as any; // TODO: Cubic, quadratic
 
-  Module.generateMSDF(dataPtr, crds, cmds, -0.5, 1, 1 / 80, 0, 0, 3);
-  console.timeEnd("generate msdf");
+    cmds.push_back(type.charCodeAt(0));
+
+    switch (type) {
+      case "M":
+      case "L":
+        crds.push_back(x);
+        crds.push_back(y);
+        break;
+      case "C":
+        crds.push_back(x1);
+        crds.push_back(y1);
+        crds.push_back(x2);
+        crds.push_back(y2);
+        crds.push_back(x);
+        crds.push_back(y);
+        break;
+      case "Z":
+        break;
+      default:
+        throw new Error(`Unknown command: ${type}`);
+    }
+  });
+
+  Module.generateMSDF(
+    dataPtr,
+    crds,
+    cmds,
+    width,
+    height,
+    distanceRange,
+    1,
+    xOffset,
+    yOffset,
+    3,
+  );
 
   const resultArray = Module.HEAPF32.subarray(
     dataPtr >> 2,
     (dataPtr >> 2) + arrayLength,
   );
 
-  renderBitmapToCanvas(resultArray);
+  placeOnImageData(resultArray, width, height, imageData, x, y);
   Module._free(dataPtr);
 
   crds.delete();
   cmds.delete();
-  console.timeEnd("font");
 }
 
-function renderBitmapToCanvas(data: Float32Array, width = 32, height = 32) {
-  const imageData = new ImageData(width, height);
+function placeOnImageData(
+  data: Float32Array,
+  iw: number,
+  ih: number,
+  imageData: ImageData,
+  offsetX: number,
+  offsetY: number,
+) {
+  const { width, height } = imageData;
+  const { data: destData } = imageData;
 
-  for (let i = 0; i < width * height; i++) {
-    imageData.data[4 * i] = data[3 * i];
-    imageData.data[4 * i + 1] = data[3 * i + 1];
-    imageData.data[4 * i + 2] = data[3 * i + 2];
-    imageData.data[4 * i + 3] = 255;
+  for (let y = 0; y < height; y++) {
+    const dy = y + offsetY;
+    if (dy < 0 || dy >= ih) {
+      continue;
+    }
+
+    for (let x = 0; x < width; x++) {
+      const dx = x + offsetX;
+      if (dx < 0 || dx >= iw) {
+        continue;
+      }
+
+      const srcIdx = (dy * iw + dx) * 3;
+      const destIdx = (y * width + x) * 4;
+
+      destData[destIdx] = data[srcIdx] * 255;
+      destData[destIdx + 1] = data[srcIdx + 1] * 255;
+      destData[destIdx + 2] = data[srcIdx + 2] * 255;
+      destData[destIdx + 3] = 255;
+    }
   }
+}
 
+function renderBitmapToCanvas(imageData: ImageData) {
+  const width = imageData.width;
+  const height = imageData.height;
   const scene = new Scene();
   const camera = new PerspectiveCamera(75, width / height, 0.1, 1000);
 
-  const renderer = new WebGLRenderer();
-  renderer.setSize(width * 10, height * 10);
+  const renderer = new WebGLRenderer({});
+  renderer.setClearColor(0);
+  renderer.setSize(width, height);
   renderer.setAnimationLoop(animate);
   document.body.appendChild(renderer.domElement);
 
-  const geometry = new PlaneGeometry(1, 1, 1);
+  const geometry = new PlaneGeometry(width / height, 1, 1);
   // const material = new MeshBasicMaterial({ color: 0x00ff00 });
   const map = new Texture(imageData);
   map.needsUpdate = true;
@@ -106,7 +178,7 @@ function renderBitmapToCanvas(data: Float32Array, width = 32, height = 32) {
 
    void main() {
         vec4 color = texture2D(tex, vUv);
-        float m = smoothstep(0.5, 0.51, median(color.r, color.g, color.b));
+        float m = smoothstep(0.2, 0.21, median(color.r, color.g, color.b));
         gl_FragColor = vec4(m, 0.0, 0.0, 1.0);
         gl_FragColor = color;
     }
@@ -123,6 +195,7 @@ function renderBitmapToCanvas(data: Float32Array, width = 32, height = 32) {
       tex: { value: map },
     },
   });
+  material.transparent = true;
   const cube = new Mesh(geometry, material);
   scene.add(cube);
 
