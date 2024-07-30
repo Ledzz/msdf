@@ -9,28 +9,33 @@ import {
 } from "three";
 
 import { Font, parse } from "opentype.js";
-import { MaxRectsPacker } from "maxrects-packer";
+import { MaxRectsPacker, Rectangle } from "maxrects-packer";
 
 declare var Module;
 
+type PackerRectangle = Rectangle & { result: Float32Array };
+export const CHARSET =
+  "’|Wj@$()[]{}/\\w%MQm0fgipqy!#&123456789?ABCDEFGHIJKLNOPRSTUVXYZbdhkl;t<>aceos:nruvxz~+=_^*-\"',`. €£";
+
 export function library(data: ArrayBuffer) {
   const font = parse(data);
-  const totalWidth = 128;
-  const totalHeight = 128;
+  const totalWidth = 512;
+  const totalHeight = 512;
   const output = new Uint8ClampedArray(totalWidth * totalHeight * 4);
   const imageData = new ImageData(output, totalWidth, totalHeight);
 
   const fontSize = 42;
 
-  const packer = new MaxRectsPacker(totalWidth, totalHeight);
+  const packer = new MaxRectsPacker<PackerRectangle>(
+    totalWidth,
+    totalHeight,
+    1,
+    {},
+  );
 
   console.time("renderGlyph");
 
-  addGlyphs(packer, font, fontSize, "ABC", output, totalWidth, totalHeight);
-
-  addGlyphs(packer, font, fontSize, "DEF", output, totalWidth, totalHeight);
-
-  addGlyphs(packer, font, fontSize, "GHI", output, totalWidth, totalHeight);
+  addGlyphs(packer, font, fontSize, CHARSET, output, totalWidth, totalHeight);
 
   console.timeEnd("renderGlyph");
 
@@ -38,7 +43,7 @@ export function library(data: ArrayBuffer) {
 }
 
 function addGlyphs(
-  packer: MaxRectsPacker,
+  packer: MaxRectsPacker<PackerRectangle>,
   font: Font,
   fontSize: number,
   glyphs: string,
@@ -122,10 +127,27 @@ function addGlyphs(
     crds.delete();
     cmds.delete();
 
-    return { width, height, result };
+    return {
+      width,
+      height,
+      result,
+
+      // "id": 124,
+      // "index": 1319,
+      // "char": "|",
+      // "width": 10,
+      // "height": 54,
+      // "xoffset": 3,
+      // "yoffset": 2,
+      // "xadvance": 16,
+      // "chnl": 15,
+      // "x": 0,
+      // "y": 0,
+      // "page": 0
+    };
   });
 
-  packer.addArray(rectangles);
+  packer.addArray(rectangles as any);
 
   if (packer.bins.length > 1) {
     throw new Error("More that one bin");
