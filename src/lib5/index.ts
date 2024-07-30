@@ -121,22 +121,11 @@ function addGlyphs(
 
     crds.delete();
     cmds.delete();
-    //
-    // placeOnImageData(
-    //   result,
-    //   width,
-    //   height,
-    //   output,
-    //   totalWidth,
-    //   totalHeight,0,0
-    // );
 
     return { width, height, result };
   });
 
   packer.addArray(rectangles);
-
-  console.log(packer.bins);
 
   if (packer.bins.length > 1) {
     throw new Error("More that one bin");
@@ -168,7 +157,6 @@ function placeOnImageData(
   offsetX: number,
   offsetY: number,
 ) {
-  console.log(iw, ih, width, height, offsetX, offsetY);
   for (let y = 0; y < height; y++) {
     const dy = y + offsetY;
     if (dy < 0 || dy >= ih) {
