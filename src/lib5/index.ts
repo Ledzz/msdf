@@ -20,29 +20,6 @@ type PackerRectangle = Rectangle & { result: Float32Array };
 
 export const CHARSET = "ABCDEF";
 
-export function library(data: ArrayBuffer) {
-  const font = parse(data);
-  const totalWidth = 512;
-  const totalHeight = 512;
-  const output = new Uint8ClampedArray(totalWidth * totalHeight * 4);
-  const imageData = new ImageData(output, totalWidth, totalHeight);
-
-  const fontSize = 42;
-
-  const packer = new MaxRectsPacker<PackerRectangle>(
-    totalWidth,
-    totalHeight,
-    1,
-    {},
-  );
-
-  console.time("renderGlyph");
-
-  addGlyphs(packer, font, fontSize, CHARSET, output, totalWidth, totalHeight);
-
-  console.timeEnd("renderGlyph");
-}
-
 type Options = { width: number; height: number; fontSize: number };
 const defaultOptions = {
   width: 512,
