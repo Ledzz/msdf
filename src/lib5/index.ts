@@ -14,8 +14,11 @@ import { MaxRectsPacker, Rectangle } from "maxrects-packer";
 declare var Module;
 
 type PackerRectangle = Rectangle & { result: Float32Array };
-export const CHARSET =
-  "’|Wj@$()[]{}/\\w%MQm0fgipqy!#&123456789?ABCDEFGHIJKLNOPRSTUVXYZbdhkl;t<>aceos:nruvxz~+=_^*-\"',`. €£";
+
+// export const CHARSET =
+("’|Wj@$()[]{}/\\w%MQm0fgipqy!#&123456789?ABCDEFGHIJKLNOPRSTUVXYZbdhkl;t<>aceos:nruvxz~+=_^*-\"',`. €£");
+
+export const CHARSET = "ABCDEF";
 
 export function library(data: ArrayBuffer) {
   const font = parse(data);
@@ -38,8 +41,65 @@ export function library(data: ArrayBuffer) {
   addGlyphs(packer, font, fontSize, CHARSET, output, totalWidth, totalHeight);
 
   console.timeEnd("renderGlyph");
+}
 
-  renderBitmapToCanvas(imageData);
+type Options = { width: number; height: number; fontSize: number };
+const defaultOptions = {
+  width: 512,
+  height: 512,
+  fontSize: 42,
+} satisfies Options;
+
+export class Renderer {
+  font?: Font;
+
+  width: number;
+  height: number;
+  fontSize: number;
+  output: Uint8ClampedArray;
+  imageData: ImageData;
+  packer: MaxRectsPacker<PackerRectangle>;
+
+  constructor(options?: Partial<Options>) {
+    const optionsWithDefault = {
+      ...defaultOptions,
+      ...options,
+    };
+
+    this.width = optionsWithDefault.width;
+    this.height = optionsWithDefault.height;
+    this.fontSize = optionsWithDefault.fontSize;
+    this.output = new Uint8ClampedArray(this.width * this.height * 4);
+    this.imageData = new ImageData(this.output, this.width, this.height);
+
+    this.packer = new MaxRectsPacker<PackerRectangle>(
+      this.width,
+      this.height,
+      1,
+      {},
+    );
+  }
+
+  loadFont(data: ArrayBuffer) {
+    this.font = parse(data);
+  }
+
+  addGlyphs(glyphs: string) {
+    if (!this.font) {
+      throw new Error("Font is not loaded");
+    }
+    addGlyphs(
+      this.packer,
+      this.font,
+      this.fontSize,
+      glyphs,
+      this.output,
+      this.width,
+      this.height,
+    );
+
+    renderBitmapToCanvas(this.imageData);
+  }
 }
 
 function addGlyphs(

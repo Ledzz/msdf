@@ -1,9 +1,15 @@
 import "./App.css";
-import { library } from "./lib5";
+import { Renderer } from "./lib5";
 
 async function loadFont() {
   const font = await (await fetch("/Inter-Bold.otf")).arrayBuffer();
-  library(font);
+  // library(font);
+
+  const renderer = new Renderer();
+
+  renderer.loadFont(font);
+
+  renderer.addGlyphs("ABCDEF");
 }
 loadFont();
 
