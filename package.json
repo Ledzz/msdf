@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "build:cpp": "emcc --bind -sEXPORTED_FUNCTIONS=\"_malloc\",\"_free\" -sMODULARIZE --extern-post-js post.js -o ../msdf/lib/msdfgen.js wasm.cpp core/Shape.cpp core/EdgeHolder.cpp core/Projection.cpp core/DistanceMapping.cpp core/msdfgen.cpp core/contour-combiners.cpp core/edge-selectors.cpp core/MSDFErrorCorrection.cpp core/Contour.cpp core/msdf-error-correction.cpp core/equation-solver.cpp core/edge-coloring.cpp core/edge-segments.cpp",
     "build": "tsc -b && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
