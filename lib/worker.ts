@@ -1,9 +1,8 @@
 import * as Comlink from "https://unpkg.com/comlink/dist/esm/comlink.mjs";
 import { Renderer } from "./index.ts";
 
-import Module from "./a.out.js";
+import Module from "./msdfgen.js";
 
-console.log(Module());
 let renderer: Renderer;
 
 const obj = {
