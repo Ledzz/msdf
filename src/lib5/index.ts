@@ -28,14 +28,15 @@ const defaultOptions = {
 } satisfies Options;
 
 export class Renderer {
-  font?: Font;
-
   width: number;
   height: number;
   fontSize: number;
   output: Uint8ClampedArray;
   imageData: ImageData;
   packer: MaxRectsPacker<PackerRectangle>;
+
+  fonts?: Font[];
+  urls?: string[];
 
   constructor(options?: Partial<Options>) {
     const optionsWithDefault = {
@@ -57,17 +58,32 @@ export class Renderer {
     );
   }
 
-  loadFont(data: ArrayBuffer) {
-    this.font = parse(data);
+  setFonts(urls: string[]) {
+    this.urls = urls;
   }
 
-  addGlyphs(glyphs: string) {
-    if (!this.font) {
-      throw new Error("Font is not loaded");
+  async loadFont(url: string) {
+    const font = await (await fetch(url)).arrayBuffer();
+
+    this.fonts = [parse(font)];
+  }
+
+  async addGlyphs(glyphs: string) {
+    if (!this.urls) {
+      throw new Error("Font not specified");
     }
+    // TODO: Find font with correct charset
+    if (!this.fonts?.[0]) {
+      await this.loadFont(this.urls[0]);
+    }
+    if (!this.fonts) {
+      throw new Error("Unknown error");
+    }
+    const font = this.fonts[0];
+
     addGlyphs(
       this.packer,
-      this.font,
+      font,
       this.fontSize,
       glyphs,
       this.output,
