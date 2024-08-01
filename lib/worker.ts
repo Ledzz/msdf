@@ -1,7 +1,7 @@
 import * as Comlink from "https://unpkg.com/comlink/dist/esm/comlink.mjs";
-import { Renderer } from "./index.ts";
 
 import Module from "./msdfgen.js";
+import { Renderer } from "./renderer";
 
 let renderer: Renderer;
 
@@ -13,7 +13,7 @@ const obj = {
   setFonts: () => {
     renderer.setFonts(["/Inter-Bold.otf"]);
   },
-  addGlyphs: (charset) => {
+  addGlyphs: (charset: string) => {
     return renderer.addGlyphs(charset);
   },
 };

@@ -1,5 +1,5 @@
 import "./App.css";
-import { addGlyphs, init } from "../lib/worker-runner";
+import { addGlyphs, init } from "../lib";
 import { useEffect, useState } from "react";
 import {
   Mesh,
