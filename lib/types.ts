@@ -1,7 +1,17 @@
 import { Rectangle } from "maxrects-packer";
 
 export type PackerRectangle = Rectangle & { result: Float32Array };
-export type Options = { width: number; height: number; fontSize: number };
+export type Options = {
+  width: number;
+  height: number;
+  fontSize: number;
+
+  mode:
+    | "OffscreenCanvas"
+    | "Uint8ClampedArray"
+    | "SharedArrayBuffer"
+    | "ImageData";
+};
 // TODO: it should be loaded from wasm
 export type ModuleType = {
   _malloc: (size: number) => number;

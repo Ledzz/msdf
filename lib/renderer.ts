@@ -7,17 +7,21 @@ const defaultOptions = {
   width: 512,
   height: 512,
   fontSize: 42,
-} satisfies Options;
+  mode: "ImageData",
+} satisfies Partial<Options>;
 
 export class Renderer {
   width: number;
   height: number;
   fontSize: number;
-  output: Uint8ClampedArray;
-  imageData: ImageData;
+  // output: Uint8ClampedArray;
   packer: MaxRectsPacker<PackerRectangle>;
   fonts?: Font[];
   urls?: string[];
+
+  imageData?: ImageData;
+
+  options: Options;
 
   constructor(
     private module: ModuleType,
@@ -28,11 +32,14 @@ export class Renderer {
       ...options,
     };
 
+    this.options = optionsWithDefault as Options;
+
     this.width = optionsWithDefault.width;
     this.height = optionsWithDefault.height;
     this.fontSize = optionsWithDefault.fontSize;
-    this.output = new Uint8ClampedArray(this.width * this.height * 4);
-    this.imageData = new ImageData(this.output, this.width, this.height);
+    if (optionsWithDefault.mode === "ImageData") {
+      this.imageData = new ImageData(this.width, this.height);
+    }
 
     this.packer = new MaxRectsPacker<PackerRectangle>(
       this.width,
@@ -65,34 +72,11 @@ export class Renderer {
     }
     const font = this.fonts[0];
 
-    this.addGlyphs1(
-      this.packer,
-      font,
-      this.fontSize,
-      glyphs,
-      this.output,
-      this.width,
-      this.height,
-    );
-
-    return this.imageData;
-    // renderBitmapToCanvas(this.imageData);
-  }
-
-  addGlyphs1(
-    packer: MaxRectsPacker<PackerRectangle>,
-    font: Font,
-    fontSize: number,
-    glyphs: string,
-    output: Uint8ClampedArray,
-    totalWidth: number,
-    totalHeight: number,
-  ) {
     const rectangles = glyphs.split("").map((g) => {
       const glyph = font.charToGlyph(g);
 
-      const commands = glyph.getPath(0, 0, fontSize).commands;
-      const bBox = glyph.getPath(0, 0, fontSize).getBoundingBox();
+      const commands = glyph.getPath(0, 0, this.fontSize).commands;
+      const bBox = glyph.getPath(0, 0, this.fontSize).getBoundingBox();
 
       const distanceRange = 4;
       const pad = distanceRange >> 1;
@@ -184,25 +168,22 @@ export class Renderer {
       };
     });
 
-    packer.addArray(rectangles as any);
+    this.packer.addArray(rectangles as any);
 
-    if (packer.bins.length > 1) {
+    if (this.packer.bins.length > 1) {
       throw new Error("More that one bin");
     }
 
-    packer.bins.forEach((bin) => {
-      bin.rects.forEach(({ result, width, height, x, y }) => {
-        placeOnImageData(
-          result,
-          width,
-          height,
-          output,
-          totalWidth,
-          totalHeight,
-          -x,
-          -y,
-        );
+    if (this.options.mode === "ImageData") {
+      this.packer.bins.forEach((bin) => {
+        bin.rects.forEach(({ result, width, height, x, y }) => {
+          if (!this.imageData) {
+            return;
+          }
+          placeOnImageData(result, width, height, this.imageData, -x, -y);
+        });
       });
-    });
+      return this.imageData;
+    }
   }
 }

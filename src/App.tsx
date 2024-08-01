@@ -11,19 +11,34 @@ import {
   WebGLRenderer,
 } from "three";
 
+// (async function () {
+//   const renderer = createRenderer();
+//
+//   await renderer.init({
+//     mode: "ImageData",
+//   });
+//   await renderer.setFonts(["/Inter-Bold.otf"]);
+//
+//   console.time("ImageData");
+//   const imageData = await renderer.addGlyphs("ABCDEFGHIJKLMNOP");
+//   console.timeEnd("ImageData");
+//
+//   renderBitmapToCanvas(imageData);
+// })();
+
 (async function () {
   const renderer = createRenderer();
 
-  await renderer.init(1);
+  await renderer.init({
+    mode: "OffscreenCanvas",
+  });
   await renderer.setFonts(["/Inter-Bold.otf"]);
 
-  const imageData = await renderer.addGlyphs("ABCDEFGHIJKLMNOP");
-  renderBitmapToCanvas(imageData);
+  console.time("OffscreenCanvas");
+  const canvas = await renderer.addGlyphs("ABCDEFGHIJKLMNOP");
+  console.timeEnd("OffscreenCanvas");
 
-  setTimeout(async () => {
-    const imageData = await renderer.addGlyphs("QRTSUVWXYZ");
-    renderBitmapToCanvas(imageData);
-  }, 5000);
+  // renderBitmapToCanvas(imageData);
 })();
 
 function App() {
