@@ -10,11 +10,15 @@ const obj = {
     const module = await Module();
     renderer = new Renderer(module);
   },
-  setFonts: () => {
-    renderer.setFonts(["/Inter-Bold.otf"]);
+  setFonts: (
+    ...args: Parameters<Renderer["setFonts"]>
+  ): ReturnType<Renderer["setFonts"]> => {
+    return renderer.setFonts(...args);
   },
-  addGlyphs: (charset: string) => {
-    return renderer.addGlyphs(charset);
+  addGlyphs: (
+    ...args: Parameters<Renderer["addGlyphs"]>
+  ): ReturnType<Renderer["addGlyphs"]> => {
+    return renderer.addGlyphs(...args);
   },
 };
 

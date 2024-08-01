@@ -1,5 +1,5 @@
 import "./App.css";
-import { addGlyphs, init } from "../lib";
+import { createRenderer } from "../lib";
 import { useEffect, useState } from "react";
 import {
   Mesh,
@@ -12,12 +12,16 @@ import {
 } from "three";
 
 (async function () {
-  await init();
-  const imageData = await addGlyphs("ABCDEFGHIJKLMNOP");
+  const renderer = createRenderer();
+
+  await renderer.init();
+  await renderer.setFonts(["/Inter-Bold.otf"]);
+
+  const imageData = await renderer.addGlyphs("ABCDEFGHIJKLMNOP");
   renderBitmapToCanvas(imageData);
 
   setTimeout(async () => {
-    const imageData = await addGlyphs("QRTSUVWXYZ");
+    const imageData = await renderer.addGlyphs("QRTSUVWXYZ");
     renderBitmapToCanvas(imageData);
   }, 5000);
 })();
