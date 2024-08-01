@@ -13,8 +13,8 @@ const obj = {
   setFonts: () => {
     renderer.setFonts(["/Inter-Bold.otf"]);
   },
-  addGlyphs: () => {
-    return renderer.addGlyphs("ABCDEFGHIJKLMNOP");
+  addGlyphs: (charset) => {
+    return renderer.addGlyphs(charset);
   },
 };
 

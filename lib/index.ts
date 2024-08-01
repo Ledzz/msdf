@@ -35,6 +35,7 @@ type ModuleType = {
     channels: number,
   ) => void;
 };
+
 export class Renderer {
   width: number;
   height: number;

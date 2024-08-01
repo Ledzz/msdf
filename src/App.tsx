@@ -13,8 +13,13 @@ import {
 
 (async function () {
   await init();
-  const imageData = await addGlyphs();
+  const imageData = await addGlyphs("ABCDEFGHIJKLMNOP");
   renderBitmapToCanvas(imageData);
+
+  setTimeout(async () => {
+    const imageData = await addGlyphs("QRTSUVWXYZ");
+    renderBitmapToCanvas(imageData);
+  }, 5000);
 })();
 
 function App() {

@@ -1,7 +1,7 @@
 import * as Comlink from "https://unpkg.com/comlink/dist/esm/comlink.mjs";
-import MyWorker from "./worker?worker";
+import MsdfgenWorker from "./worker?worker";
 
-const worker = new MyWorker();
+const worker = new MsdfgenWorker();
 const obj = Comlink.wrap(worker);
 
 export async function init() {
@@ -9,6 +9,6 @@ export async function init() {
   await obj.setFonts();
 }
 
-export async function addGlyphs() {
-  return await obj.addGlyphs();
+export async function addGlyphs(charset: string) {
+  return await obj.addGlyphs(charset);
 }
