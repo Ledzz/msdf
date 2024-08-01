@@ -14,7 +14,7 @@ import {
 (async function () {
   const renderer = createRenderer();
 
-  await renderer.init();
+  await renderer.init(1);
   await renderer.setFonts(["/Inter-Bold.otf"]);
 
   const imageData = await renderer.addGlyphs("ABCDEFGHIJKLMNOP");
