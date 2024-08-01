@@ -26,6 +26,9 @@ const obj = {
   ): ReturnType<Renderer["addGlyphs"]> => {
     return renderer.addGlyphs(...args);
   },
+  getImageData: () => {
+    return renderer.imageData;
+  },
 };
 
 Comlink.expose(obj);

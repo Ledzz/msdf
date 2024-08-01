@@ -2,13 +2,11 @@ import { MaxRectsPacker } from "maxrects-packer";
 import { Font, parse } from "opentype.js";
 import { ModuleType, Options, PackerRectangle } from "./types";
 import { placeOnImageData } from "./placeOnImageData";
-import { placeOnSAB } from "./placeOnSAB";
 
 const defaultOptions = {
   width: 512,
   height: 512,
   fontSize: 42,
-  mode: "ImageData",
 } satisfies Partial<Options>;
 
 export class Renderer {
@@ -20,7 +18,6 @@ export class Renderer {
   urls?: string[];
 
   imageData?: ImageData;
-  offscreenCanvas?: OffscreenCanvas;
 
   options: Options;
 
@@ -38,12 +35,8 @@ export class Renderer {
     this.width = optionsWithDefault.width;
     this.height = optionsWithDefault.height;
     this.fontSize = optionsWithDefault.fontSize;
-    if (optionsWithDefault.mode === "ImageData") {
-      this.imageData = new ImageData(this.width, this.height);
-    }
-    if (optionsWithDefault.mode === "OffscreenCanvas") {
-      this.offscreenCanvas = options.canvas; //new OffscreenCanvas(this.width, this.height);
-    }
+    this.imageData =
+      this.options.imageData ?? new ImageData(this.width, this.height);
 
     this.packer = new MaxRectsPacker<PackerRectangle>(
       this.width,
@@ -178,52 +171,13 @@ export class Renderer {
       throw new Error("More that one bin");
     }
 
-    if (this.options.mode === "ImageData") {
-      this.packer.bins.forEach((bin) => {
-        bin.rects.forEach(({ result, width, height, x, y }) => {
-          if (!this.imageData) {
-            return;
-          }
-          placeOnImageData(result, width, height, this.imageData, -x, -y);
-        });
+    this.packer.bins.forEach((bin) => {
+      bin.rects.forEach(({ result, width, height, x, y }) => {
+        if (!this.imageData) {
+          return;
+        }
+        placeOnImageData(result, width, height, this.imageData, -x, -y);
       });
-      return this.imageData;
-    }
-    if (this.options.mode === "OffscreenCanvas") {
-      const imageData = new ImageData(this.width, this.height);
-      const ctx = this.offscreenCanvas?.getContext("2d");
-
-      this.packer.bins.forEach((bin) => {
-        bin.rects.forEach(({ result, width, height, x, y }) => {
-          if (!this.offscreenCanvas) {
-            return;
-          }
-          const ctx = this.offscreenCanvas.getContext("2d");
-          if (!ctx) {
-            throw new Error("No context");
-          }
-
-          placeOnImageData(result, width, height, imageData, -x, -y);
-        });
-      });
-
-      ctx?.putImageData(imageData, 0, 0);
-    }
-    if (this.options.mode === "SharedArrayBuffer") {
-      this.packer.bins.forEach((bin) => {
-        bin.rects.forEach(({ result, width, height, x, y }) => {
-          placeOnSAB(
-            result,
-            width,
-            height,
-            this.options.sab,
-            this.width,
-            this.height,
-            -x,
-            -y,
-          );
-        });
-      });
-    }
+    });
   }
 }

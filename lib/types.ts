@@ -5,14 +5,7 @@ export type Options = {
   width: number;
   height: number;
   fontSize: number;
-
-  mode:
-    | "OffscreenCanvas"
-    | "Uint8ClampedArray"
-    | "SharedArrayBuffer"
-    | "ImageData";
-
-  canvas?: OffscreenCanvas;
+  imageData?: ImageData;
 };
 // TODO: it should be loaded from wasm
 export type ModuleType = {
