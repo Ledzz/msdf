@@ -11,6 +11,8 @@ export type Options = {
     | "Uint8ClampedArray"
     | "SharedArrayBuffer"
     | "ImageData";
+
+  canvas?: OffscreenCanvas;
 };
 // TODO: it should be loaded from wasm
 export type ModuleType = {
@@ -32,3 +34,4 @@ export type ModuleType = {
     channels: number,
   ) => void;
 };
+export type WorkerAPI = {};

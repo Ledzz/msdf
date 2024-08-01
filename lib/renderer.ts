@@ -2,6 +2,7 @@ import { MaxRectsPacker } from "maxrects-packer";
 import { Font, parse } from "opentype.js";
 import { ModuleType, Options, PackerRectangle } from "./types";
 import { placeOnImageData } from "./placeOnImageData";
+import { placeOnSAB } from "./placeOnSAB";
 
 const defaultOptions = {
   width: 512,
@@ -14,12 +15,12 @@ export class Renderer {
   width: number;
   height: number;
   fontSize: number;
-  // output: Uint8ClampedArray;
   packer: MaxRectsPacker<PackerRectangle>;
   fonts?: Font[];
   urls?: string[];
 
   imageData?: ImageData;
+  offscreenCanvas?: OffscreenCanvas;
 
   options: Options;
 
@@ -39,6 +40,9 @@ export class Renderer {
     this.fontSize = optionsWithDefault.fontSize;
     if (optionsWithDefault.mode === "ImageData") {
       this.imageData = new ImageData(this.width, this.height);
+    }
+    if (optionsWithDefault.mode === "OffscreenCanvas") {
+      this.offscreenCanvas = options.canvas; //new OffscreenCanvas(this.width, this.height);
     }
 
     this.packer = new MaxRectsPacker<PackerRectangle>(
@@ -184,6 +188,42 @@ export class Renderer {
         });
       });
       return this.imageData;
+    }
+    if (this.options.mode === "OffscreenCanvas") {
+      const imageData = new ImageData(this.width, this.height);
+      const ctx = this.offscreenCanvas?.getContext("2d");
+
+      this.packer.bins.forEach((bin) => {
+        bin.rects.forEach(({ result, width, height, x, y }) => {
+          if (!this.offscreenCanvas) {
+            return;
+          }
+          const ctx = this.offscreenCanvas.getContext("2d");
+          if (!ctx) {
+            throw new Error("No context");
+          }
+
+          placeOnImageData(result, width, height, imageData, -x, -y);
+        });
+      });
+
+      ctx?.putImageData(imageData, 0, 0);
+    }
+    if (this.options.mode === "SharedArrayBuffer") {
+      this.packer.bins.forEach((bin) => {
+        bin.rects.forEach(({ result, width, height, x, y }) => {
+          placeOnSAB(
+            result,
+            width,
+            height,
+            this.options.sab,
+            this.width,
+            this.height,
+            -x,
+            -y,
+          );
+        });
+      });
     }
   }
 }
