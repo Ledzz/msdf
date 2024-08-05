@@ -27,7 +27,6 @@ export type ModuleType = {
     channels: number,
   ) => void;
 };
-export type WorkerAPI = {};
 
 export type FontInfo = {
   pages: Array<string>;

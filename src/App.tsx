@@ -60,7 +60,7 @@ function App() {
         }
         const data = imageDataToBase64PNG(imageData.value);
 
-        return { pages: ["data:image/png;base64," + data], ...fontData.value };
+        return { ...fontData.value, pages: ["data:image/png;base64," + data] };
       }).subscribe((data) => {
         saveAsJSON(data, "Inter-Bold.json");
       });

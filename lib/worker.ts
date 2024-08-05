@@ -37,5 +37,6 @@ const obj = {
     renderer.imageDataCallback = imageDataCallback;
   },
 };
+export type WorkerAPI = typeof obj;
 
 Comlink.expose(obj);

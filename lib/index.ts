@@ -1,6 +1,8 @@
 import * as Comlink from "comlink";
 import MsdfgenWorker from "./worker?worker";
-import { FontInfo, Options, WorkerAPI } from "./types.ts";
+import type { WorkerAPI } from "./worker";
+
+import { FontInfo, Options } from "./types.ts";
 import { signal } from "@preact/signals-core";
 
 export const createRenderer = async (options?: Options) => {
