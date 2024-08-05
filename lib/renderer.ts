@@ -105,6 +105,9 @@ export class Renderer {
 
     const rectangles = glyphs.split("").map((g) => {
       const glyph = font.charToGlyph(g);
+      if (glyph.name === ".notdef") {
+        // TODO: handle missing glyphs
+      }
 
       const commands = glyph.getPath(0, 0, this.fontSize).commands;
       const bBox = glyph.getPath(0, 0, this.fontSize).getBoundingBox();

@@ -50,6 +50,8 @@ function App() {
       await renderer.addGlyphs(
         "’|Wj@$()[]{}/\\w%MQm0fgipqy!#&123456789?ABCDEFGHIJKLNOPRSTUVXYZbdhkl;t<>aceos:nruvxz~+=_^*-\"',`. €£ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮйцукенгшщзхъфывапролджэячсмитьбю",
       );
+
+      await renderer.addGlyphs("お気に入りの寄付");
       console.timeEnd("1");
 
       computed(() => {
