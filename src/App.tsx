@@ -52,7 +52,6 @@ function App() {
       );
       console.timeEnd("1");
 
-
       computed(() => {
         if (!fontData.value || !imageData.value) {
           return;
