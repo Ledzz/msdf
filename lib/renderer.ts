@@ -22,6 +22,7 @@ export class Renderer {
   options: Options;
   fontDataCallback?: (data: FontData) => void;
   imageDataCallback?: (data: ImageData) => void;
+  // TODO: update it on the fly
   fontData: FontData = {
     chars: [],
     info: {
