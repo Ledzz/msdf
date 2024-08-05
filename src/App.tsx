@@ -11,27 +11,24 @@ import {
   WebGLRenderer,
 } from "three";
 
-const split1 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 const split2 = "abcdefghijklmnopqrstuvwxyz".split("");
 
 (async function () {
-  const renderer = createRenderer();
+  const { renderer, imageData, fontData } = await createRenderer();
   const canvas = document.createElement("canvas");
   document.body.appendChild(canvas);
-  const imageData = new ImageData(512, 512);
-  await renderer.init({
-    imageData,
+
+  imageData.subscribe((data) => {
+    if (data) {
+      renderBitmapToCanvas(data, canvas);
+    }
   });
   await renderer.setFonts(["/Inter-Bold.otf"]);
 
-  for (let i = 0; i < split1.length; i++) {
-    await renderer.addGlyphs(split1[i]);
-  }
-  renderBitmapToCanvas(await renderer.getImageData(), canvas);
+  await renderer.addGlyphs("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   for (let i = 0; i < split2.length; i++) {
     await renderer.addGlyphs(split2[i]);
   }
-  renderBitmapToCanvas(await renderer.getImageData(), canvas);
 })();
 
 function App() {

@@ -1,6 +1,6 @@
 import { MaxRectsPacker } from "maxrects-packer";
 import { Font, parse } from "opentype.js";
-import { ModuleType, Options, PackerRectangle } from "./types";
+import { FontData, ModuleType, Options, PackerRectangle } from "./types";
 import { placeOnImageData } from "./placeOnImageData";
 
 const defaultOptions = {
@@ -20,6 +20,8 @@ export class Renderer {
   imageData?: ImageData;
 
   options: Options;
+  fontDataCallback?: (data: FontData) => void;
+  imageDataCallback?: (data: ImageData) => void;
 
   constructor(
     private module: ModuleType,
@@ -179,5 +181,8 @@ export class Renderer {
         placeOnImageData(result, width, height, this.imageData, -x, -y);
       });
     });
+    if (this.imageData) {
+      this.imageDataCallback?.(this.imageData);
+    }
   }
 }
