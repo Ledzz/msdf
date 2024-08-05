@@ -1,14 +1,13 @@
 import * as Comlink from "comlink";
 import MsdfgenWorker from "./worker?worker";
-import { Options, WorkerAPI } from "./types.ts";
+import { FontInfo, Options, WorkerAPI } from "./types.ts";
 import { signal } from "@preact/signals-core";
-import { FontData } from "three/examples/jsm/loaders/FontLoader";
 
 export const createRenderer = async (options?: Options) => {
-  const fontData = signal<FontData>();
+  const fontData = signal<FontInfo>();
   const imageData = signal<ImageData>();
 
-  const fontDataCallback = (data: FontData) => {
+  const fontDataCallback = (data: FontInfo) => {
     fontData.value = data;
   };
   const imageDataCallback = (data: ImageData) => {

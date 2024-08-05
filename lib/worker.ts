@@ -2,7 +2,7 @@ import * as Comlink from "comlink";
 
 import Module from "./msdfgen.js";
 import { Renderer } from "./renderer";
-import { FontData, ModuleType } from "./types";
+import { FontInfo, ModuleType } from "./types";
 
 let renderer: Renderer;
 
@@ -30,7 +30,7 @@ const obj = {
     return renderer.imageData;
   },
   initCallbacks: (
-    fontDataCallback: (data: FontData) => void,
+    fontDataCallback: (data: FontInfo) => void,
     imageDataCallback: (data: ImageData) => void,
   ) => {
     renderer.fontDataCallback = fontDataCallback;

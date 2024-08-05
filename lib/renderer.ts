@@ -1,6 +1,6 @@
 import { MaxRectsPacker } from "maxrects-packer";
 import { Font, parse } from "opentype.js";
-import { FontData, ModuleType, Options, PackerRectangle } from "./types";
+import { FontInfo, ModuleType, Options, PackerRectangle } from "./types";
 import { placeOnImageData } from "./placeOnImageData";
 
 const defaultOptions = {
@@ -20,10 +20,10 @@ export class Renderer {
   imageData?: ImageData;
 
   options: Options;
-  fontDataCallback?: (data: FontData) => void;
+  fontDataCallback?: (data: FontInfo) => void;
   imageDataCallback?: (data: ImageData) => void;
   // TODO: update it on the fly
-  fontData: FontData = {
+  fontData: FontInfo = {
     chars: [],
     info: {
       face: "Inter-Bold",
@@ -36,7 +36,6 @@ export class Renderer {
       smooth: 1,
       aa: 1,
       padding: [2, 2, 2, 2],
-      spacing: [0, 0],
       outline: 0,
     },
     common: {
@@ -129,7 +128,7 @@ export class Renderer {
         char: g,
         xoffset: Math.round(bBox.x1) - pad,
         yoffset: Math.round(bBox.y1) + pad + baseline,
-        xadvance: glyph.advanceWidth * scale,
+        xadvance: (glyph.advanceWidth ?? 0) * scale,
         chnl: 15,
         x: 0,
         y: 0,
