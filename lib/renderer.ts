@@ -30,106 +30,7 @@ export class Renderer {
       size: 42,
       bold: 0,
       italic: 0,
-      charset: [
-        "’",
-        "|",
-        "W",
-        "j",
-        "@",
-        "$",
-        "(",
-        ")",
-        "[",
-        "]",
-        "{",
-        "}",
-        "/",
-        "\\",
-        "w",
-        "%",
-        "M",
-        "Q",
-        "m",
-        "0",
-        "f",
-        "g",
-        "i",
-        "p",
-        "q",
-        "y",
-        "!",
-        "#",
-        "&",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8",
-        "9",
-        "?",
-        "A",
-        "B",
-        "C",
-        "D",
-        "E",
-        "F",
-        "G",
-        "H",
-        "I",
-        "J",
-        "K",
-        "L",
-        "N",
-        "O",
-        "P",
-        "R",
-        "S",
-        "T",
-        "U",
-        "V",
-        "X",
-        "Y",
-        "Z",
-        "b",
-        "d",
-        "h",
-        "k",
-        "l",
-        ";",
-        "t",
-        "<",
-        ">",
-        "a",
-        "c",
-        "e",
-        "o",
-        "s",
-        ":",
-        "n",
-        "r",
-        "u",
-        "v",
-        "x",
-        "z",
-        "~",
-        "+",
-        "=",
-        "_",
-        "^",
-        "*",
-        "-",
-        '"',
-        "'",
-        ",",
-        "`",
-        ".",
-        " ",
-        "€",
-        "£",
-      ],
+      charset: [],
       unicode: 1,
       stretchH: 100,
       smooth: 1,
@@ -215,23 +116,22 @@ export class Renderer {
       const height = Math.round(bBox.y2 - bBox.y1) + pad + pad;
       const xOffset = Math.round(-bBox.x1) + pad;
       const yOffset = Math.round(-bBox.y1) + pad;
+      const scale = this.fontSize / font.unitsPerEm;
+      const baseline =
+        font.tables.os2.sTypoAscender * (this.fontSize / font.unitsPerEm);
 
       const char = {
-        id: glyph.index,
+        id: g.charCodeAt(0),
         index: glyph.index,
         char: g,
-        width,
-        height,
-        xoffset: xOffset,
-        yoffset: yOffset,
-        xadvance: glyph.advanceWidth,
+        xoffset: Math.round(bBox.x1) - pad,
+        yoffset: Math.round(bBox.y1) + pad + baseline,
+        xadvance: glyph.advanceWidth * scale,
         chnl: 15,
         x: 0,
         y: 0,
         page: 0,
       };
-
-      this.fontData.chars.push(char);
 
       const arrayLength = width * height * 3;
       const floatArray = new Float32Array(arrayLength);
@@ -299,19 +199,7 @@ export class Renderer {
         width,
         height,
         result,
-
-        // "id": 124,
-        // "index": 1319,
-        // "char": "|",
-        // "width": 10,
-        // "height": 54,
-        // "xoffset": 3,
-        // "yoffset": 2,
-        // "xadvance": 16,
-        // "chnl": 15,
-        // "x": 0,
-        // "y": 0,
-        // "page": 0
+        ...char,
       };
     });
 
@@ -319,7 +207,6 @@ export class Renderer {
     this.fontData.common.scaleW = this.width;
     this.fontData.common.scaleH = this.height;
     this.fontData.common.lineHeight = 51;
-    this.fontDataCallback?.(this.fontData);
     this.packer.addArray(rectangles as any);
 
     if (this.packer.bins.length > 1) {
@@ -327,13 +214,18 @@ export class Renderer {
     }
 
     this.packer.bins.forEach((bin) => {
-      bin.rects.forEach(({ result, width, height, x, y }) => {
+      bin.rects.forEach(({ result, width, height, x, y, ...char }) => {
         if (!this.imageData) {
           return;
         }
+
+        this.fontData.info.charset.push(char.char);
+        this.fontData.chars.push({ ...char, width, height, x, y });
         placeOnImageData(result, width, height, this.imageData, -x, -y);
       });
     });
+
+    this.fontDataCallback?.(this.fontData);
     if (this.imageData) {
       this.imageDataCallback?.(this.imageData);
     }
