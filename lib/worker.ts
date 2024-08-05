@@ -26,9 +26,6 @@ const obj = {
   ): ReturnType<Renderer["addGlyphs"]> => {
     return renderer.addGlyphs(...args);
   },
-  getImageData: () => {
-    return renderer.imageData;
-  },
   initCallbacks: (
     fontDataCallback: (data: FontInfo) => void,
     imageDataCallback: (data: ImageData) => void,
