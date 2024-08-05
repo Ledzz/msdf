@@ -28,3 +28,5 @@ export type ModuleType = {
   ) => void;
 };
 export type WorkerAPI = {};
+
+export type FontData = {};

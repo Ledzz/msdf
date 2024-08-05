@@ -14,7 +14,7 @@ export class Renderer {
   height: number;
   fontSize: number;
   packer: MaxRectsPacker<PackerRectangle>;
-  fonts?: Font[];
+  parsedFonts?: Font[];
   urls?: string[];
 
   imageData?: ImageData;
@@ -53,7 +53,7 @@ export class Renderer {
   async loadFont(url: string) {
     const font = await (await fetch(url)).arrayBuffer();
 
-    this.fonts = [parse(font)];
+    this.parsedFonts = [parse(font)];
   }
 
   async addGlyphs(glyphs: string) {
@@ -61,13 +61,13 @@ export class Renderer {
       throw new Error("Font not specified");
     }
     // TODO: Find font with correct charset
-    if (!this.fonts?.[0]) {
+    if (!this.parsedFonts?.[0]) {
       await this.loadFont(this.urls[0]);
     }
-    if (!this.fonts) {
+    if (!this.parsedFonts) {
       throw new Error("Unknown error");
     }
-    const font = this.fonts[0];
+    const font = this.parsedFonts[0];
 
     const rectangles = glyphs.split("").map((g) => {
       const glyph = font.charToGlyph(g);
