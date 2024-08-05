@@ -4,7 +4,7 @@ import { Options, WorkerAPI } from "./types.ts";
 import { signal } from "@preact/signals-core";
 import { FontData } from "three/examples/jsm/loaders/FontLoader";
 
-export const createRenderer = async (options: Options) => {
+export const createRenderer = async (options?: Options) => {
   const fontData = signal<FontData>();
   const imageData = signal<ImageData>();
 

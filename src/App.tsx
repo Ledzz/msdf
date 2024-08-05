@@ -1,38 +1,18 @@
 import "./App.css";
 import { createRenderer } from "../lib";
 import { useEffect, useState } from "react";
-import {
-  Mesh,
-  PerspectiveCamera,
-  PlaneGeometry,
-  Scene,
-  ShaderMaterial,
-  Texture,
-  WebGLRenderer,
-} from "three";
+import { CanvasTexture, Texture } from "three";
+import { Canvas } from "@react-three/fiber";
+import { Fullscreen, Text } from "@react-three/uikit";
 
 const split2 = "abcdefghijklmnopqrstuvwxyz".split("");
 
-(async function () {
-  const { renderer, imageData, fontData } = await createRenderer();
-  const canvas = document.createElement("canvas");
-  document.body.appendChild(canvas);
-
-  imageData.subscribe((data) => {
-    if (data) {
-      renderBitmapToCanvas(data, canvas);
-    }
-  });
-  await renderer.setFonts(["/Inter-Bold.otf"]);
-
-  await renderer.addGlyphs("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-  for (let i = 0; i < split2.length; i++) {
-    await renderer.addGlyphs(split2[i]);
-  }
-})();
+const canvas = document.createElement("canvas");
+const canvasTexture = new CanvasTexture(canvas);
 
 function App() {
   const [counter, setCounter] = useState(0);
+  const [texture, setTexture] = useState(canvasTexture);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -40,64 +20,50 @@ function App() {
     }, 50);
     return () => clearInterval(interval);
   }, []);
-  return counter;
-}
 
-function renderBitmapToCanvas(imageData: ImageData, canvas: HTMLCanvasElement) {
-  const width = imageData.width;
-  const height = imageData.height;
-  const scene = new Scene();
-  const camera = new PerspectiveCamera(75, width / height, 0.1, 1000);
+  useEffect(() => {
+    const create = async () => {
+      const { renderer, imageData, fontData } = await createRenderer();
+      // document.body.appendChild(canvas);
 
-  const renderer = new WebGLRenderer({ canvas });
-  renderer.setClearColor(0);
-  renderer.setSize(width, height);
-  renderer.setAnimationLoop(animate);
-
-  const geometry = new PlaneGeometry(width / height, 1, 1);
-  // const material = new MeshBasicMaterial({ color: 0x00ff00 });
-  const map = new Texture(imageData);
-  map.needsUpdate = true;
-
-  const material = new ShaderMaterial({
-    fragmentShader: `
-   uniform sampler2D tex;
- varying vec2 vUv;
- 
- float median(float r, float g, float b) {
-            return max(min(r, g), min(max(r, g), b));
+      imageData.subscribe((data) => {
+        if (data) {
+          const t = new Texture(data);
+          t.needsUpdate = true;
+          setTexture(t);
         }
- 
+      });
+      fontData.subscribe((data) => {
+        if (data) {
+          console.log(data);
+        }
+      });
+      await renderer.setFonts(["/Inter-Bold.otf"]);
 
-   void main() {
-        vec4 color = texture2D(tex, vUv);
-        float m = smoothstep(0.2, 0.21, median(color.r, color.g, color.b));
-        gl_FragColor = vec4(m, 0.0, 0.0, 1.0);
-        gl_FragColor = color;
-    }
-   
-   `,
-    vertexShader: `
-    varying vec2 vUv;
-    void main() {
-      vUv = uv;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    }
-  `,
-    uniforms: {
-      tex: { value: map },
-    },
-  });
-  material.transparent = true;
-  const cube = new Mesh(geometry, material);
-  scene.add(cube);
+      await renderer.addGlyphs("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+      for (let i = 0; i < split2.length; i++) {
+        await renderer.addGlyphs(split2[i]);
+      }
+    };
+    create();
+  }, []);
 
-  camera.position.z = 0.652;
+  return (
+    <>
+      <Canvas style={{ height: "100vh" }}>
+        <mesh>
+          <meshBasicMaterial map={texture} />
+          <planeGeometry args={[2, 2]} />
+        </mesh>
 
-  function animate() {
-    renderer.render(scene, camera);
-    map.needsUpdate = true;
-  }
+        <Fullscreen flexDirection="row" padding={10} gap={10}>
+          <Text fontSize={1} color="red">
+            Hello
+          </Text>
+        </Fullscreen>
+      </Canvas>
+    </>
+  );
 }
 
 export default App;

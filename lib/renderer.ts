@@ -22,6 +22,9 @@ export class Renderer {
   options: Options;
   fontDataCallback?: (data: FontData) => void;
   imageDataCallback?: (data: ImageData) => void;
+  fontData: FontData = {
+    chars: [],
+  };
 
   constructor(
     private module: ModuleType,
@@ -84,6 +87,23 @@ export class Renderer {
       const height = Math.round(bBox.y2 - bBox.y1) + pad + pad;
       const xOffset = Math.round(-bBox.x1) + pad;
       const yOffset = Math.round(-bBox.y1) + pad;
+
+      const char = {
+        id: glyph.index,
+        index: glyph.index,
+        char: g,
+        width,
+        height,
+        xoffset: xOffset,
+        yoffset: yOffset,
+        xadvance: glyph.advanceWidth,
+        chnl: 15,
+        x: 0,
+        y: 0,
+        page: 0,
+      };
+
+      this.fontData.chars.push(char);
 
       const arrayLength = width * height * 3;
       const floatArray = new Float32Array(arrayLength);
@@ -167,6 +187,7 @@ export class Renderer {
       };
     });
 
+    this.fontDataCallback?.(this.fontData);
     this.packer.addArray(rectangles as any);
 
     if (this.packer.bins.length > 1) {
