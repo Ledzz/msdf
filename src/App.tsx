@@ -3,7 +3,7 @@ import { createRenderer } from "../lib";
 import { useEffect, useState } from "react";
 import { CanvasTexture, Texture } from "three";
 import { Canvas } from "@react-three/fiber";
-import { Fullscreen } from "@react-three/uikit";
+import { Fullscreen, Text } from "@react-three/uikit";
 import { Font } from "@pmndrs/uikit/internals";
 import { computed, signal } from "@preact/signals-core";
 import { NoColorSpace } from "three/src/constants";
@@ -77,10 +77,10 @@ function App() {
 
         <Fullscreen flexDirection="row" padding={10} gap={10}>
           {/*<DefaultProperties panelMaterialClass={MeshBasicMaterial}>*/}
-          {/*<Text fontSize={90} color="red">*/}
-          {/*  Hello*/}
-          {/*</Text>*/}
-          {/**/}
+          <Text fontSize={90} color="red">
+            {counter.toString()}
+          </Text>
+
           {/*{font && texture ? (*/}
           {/*  <Text fontSize={42} color="red" fs={font}>*/}
           {/*    Hello*/}
