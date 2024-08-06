@@ -148,9 +148,9 @@ export function createText(
   );
 
   const fontsSignal = computedFonts(
+    textSignal,
     mergedProperties,
     fontFamilies,
-    parentContext.root.renderer,
     initializers,
   );
   const orderInfo = computedOrderInfo(

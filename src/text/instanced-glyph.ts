@@ -1,8 +1,8 @@
 import { computed, Signal } from "@preact/signals-core";
-import { Font } from "@pmndrs/uikit/internals";
+import { FontMap } from "./font.ts";
 
 export function computedGlyphGroupDependencies(
-  fontSignal: Signal<Font[] | undefined>,
+  fontSignal: Signal<FontMap | undefined>,
 ) {
-  return computed(() => ({ font: fontSignal.value?.[0] }));
+  return computed(() => ({ font: fontSignal.value }));
 }

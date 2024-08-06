@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@preact/signals-core": "^1.8.0",
+    "@react-three/drei": "^9.109.2",
     "@react-three/fiber": "^8.16.8",
     "@react-three/uikit": "^0.4.0",
     "comlink": "^4.4.1",

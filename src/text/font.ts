@@ -5,10 +5,12 @@ import {
   FontWeight,
   Initializers,
   MergedProperties,
+  readReactive,
 } from "@pmndrs/uikit";
 import { Font, FontFamilies } from "@pmndrs/uikit/internals";
-import { TextureLoader, WebGLRenderer } from "three";
+import { Texture, TextureLoader, WebGLRenderer } from "three";
 import { FontInfo } from "../../lib/types.ts";
+import { createRenderer } from "../../lib";
 
 const fontCache = new Map<string, Set<(font: Font) => void> | Font>();
 
@@ -83,13 +85,13 @@ const fontWeightNames = {
   "extra-black": 950,
 };
 
-export function computedFonts(
+export function computedFont(
   properties: Signal<MergedProperties>,
   fontFamiliesSignal: Signal<FontFamilies | undefined> | undefined,
   renderer: WebGLRenderer,
   initializers: Initializers,
-): Signal<Font[] | undefined> {
-  const result = signal<Font[] | undefined>(undefined);
+): Signal<Font | undefined> {
+  const result = signal<Font | undefined>(undefined);
   const fontFamily = computedInheritableProperty<string | undefined>(
     properties,
     "fontFamily",
@@ -115,8 +117,72 @@ export function computedFonts(
       );
       let canceled = false;
       loadCachedFont(url, renderer, (font) =>
-        canceled ? undefined : (result.value = [font]),
+        canceled ? undefined : (result.value = font),
       );
+      return () => (canceled = true);
+    }),
+  );
+  return result;
+}
+
+export type FontMap = Record<string, Font>;
+
+const { renderer, imageData, fontData } = await createRenderer();
+await renderer.setFonts(["/Inter-Bold.otf"]);
+
+export function computedFonts(
+  textSignal: Signal<string | Signal<string> | Array<string | Signal<string>>>,
+  properties: Signal<MergedProperties>,
+  fontFamiliesSignal: Signal<FontFamilies | undefined> | undefined,
+  initializers: Initializers,
+): Signal<FontMap | undefined> {
+  const result = signal<FontMap | undefined>(undefined);
+  const fontFamily = computedInheritableProperty<string | undefined>(
+    properties,
+    "fontFamily",
+    undefined,
+  );
+  const fontWeight = computedInheritableProperty<FontWeight>(
+    properties,
+    "fontWeight",
+    "normal",
+  );
+  initializers.push(() =>
+    effect(() => {
+      const fontFamilies = fontFamiliesSignal?.value ?? defaultFontFamilyUrls;
+      let resolvedFontFamily = fontFamily.value;
+      if (resolvedFontFamily == null) {
+        resolvedFontFamily = Object.keys(fontFamilies)[0];
+      }
+      const url = getMatchingFontUrl(
+        fontFamilies[resolvedFontFamily],
+        typeof fontWeight.value === "string"
+          ? fontWeightNames[fontWeight.value]
+          : fontWeight.value,
+      );
+      const text = textSignal.value;
+      let canceled = false;
+      const textStr = Array.isArray(text)
+        ? text.map((t) => readReactive(t)).join("")
+        : readReactive(text);
+
+      renderer.addGlyphs(textStr + "?");
+
+      // loadCachedFont(url, renderer, (font) =>
+      //   canceled ? undefined : (result.value = [font]),
+      // );
+      if (!fontData.value) {
+        return;
+      }
+      const font = new Font(fontData.value, new Texture(imageData.value));
+
+      result.value = {
+        H: font,
+        e: font,
+        l: font,
+        o: font,
+        "?": font,
+      };
       return () => (canceled = true);
     }),
   );

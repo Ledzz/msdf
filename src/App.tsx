@@ -3,11 +3,12 @@ import { createRenderer } from "../lib";
 import { useEffect, useState } from "react";
 import { CanvasTexture, Texture } from "three";
 import { Canvas } from "@react-three/fiber";
-import { Fullscreen } from "@react-three/uikit";
+import { Root } from "@react-three/uikit";
 import { Font } from "@pmndrs/uikit/internals";
 import { computed } from "@preact/signals-core";
 import { NoColorSpace } from "three/src/constants";
 import { Text } from "./text/text";
+import { OrbitControls } from "@react-three/drei";
 
 const canvas = document.createElement("canvas");
 const canvasTexture = new CanvasTexture(canvas);
@@ -65,11 +66,12 @@ function App() {
       });
 
       const f = computed(() => {
-        if (!fontData.value) {
+        const font = fontData.value;
+        if (!font) {
           return;
         }
         // return new Font(fontData.value, new Texture(imageData.value));
-        return new Font(fontData.value, new Texture(imageData.value));
+        return new Font(font, new Texture(imageData.value));
       });
 
       setFont(f);
@@ -79,12 +81,13 @@ function App() {
   return (
     <>
       <Canvas style={{ height: "100vh" }}>
+        <OrbitControls />
         <mesh position={[2, 0, 0]}>
           <meshBasicMaterial map={texture} />
           <planeGeometry args={[2, 2]} />
         </mesh>
 
-        <Fullscreen flexDirection="row" padding={10} gap={10}>
+        <Root flexDirection="row" padding={10} gap={10}>
           {/*<DefaultProperties panelMaterialClass={MeshBasicMaterial}>*/}
           <Text fontSize={90} color="red">
             Hello
@@ -96,7 +99,7 @@ function App() {
           {/*  </Text>*/}
           {/*) : null}*/}
           {/*</DefaultProperties>*/}
-        </Fullscreen>
+        </Root>
       </Canvas>
     </>
   );
