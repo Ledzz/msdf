@@ -212,7 +212,6 @@ export function measureGlyphLayout(
     lines += 1;
   }
 
-  console.log({ width, height: getGlyphLayoutHeight(lines, properties) });
   return { width, height: getGlyphLayoutHeight(lines, properties) };
 }
 

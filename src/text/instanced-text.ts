@@ -2,7 +2,6 @@ import { effect, signal, Signal } from "@preact/signals-core";
 import {
   ColorRepresentation,
   Matrix4,
-  MeshBasicMaterial,
   Vector2Tuple,
   Vector3Tuple,
 } from "three";
@@ -119,8 +118,8 @@ export function createInstancedText(
           orderInfo.value.majorIndex,
           fonts["H"],
         );
-        group.instanceMaterial = new MeshBasicMaterial({ color: 0xff0000 });
-        console.log(group);
+        // group.instanceMaterial = new MeshBasicMaterial({ color: 0xff0000 });
+        // console.log(group);
         const instancedText = new InstancedText(
           group,
           textAlign,

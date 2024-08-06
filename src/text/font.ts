@@ -168,13 +168,31 @@ export function computedFonts(
 
       renderer.addGlyphs(textStr + "?");
 
-      // loadCachedFont(url, renderer, (font) =>
-      //   canceled ? undefined : (result.value = [font]),
-      // );
+      // loadCachedFont(url, renderer, (font) => {
+      //   console.log(font);
+      //   canceled
+      //     ? undefined
+      //     : (result.value = {
+      //         H: font,
+      //         e: font,
+      //         l: font,
+      //         o: font,
+      //         "?": font,
+      //       });
+      // });
+      //
+      // return;
       if (!fontData.value) {
         return;
       }
-      const font = new Font(fontData.value, new Texture(imageData.value));
+
+      const fd = JSON.parse(JSON.stringify(fontData.value));
+      const id = imageData.value;
+      const texture = new Texture(id);
+      texture.needsUpdate = true;
+
+      texture.flipY = false;
+      const font = new Font(fd, texture);
 
       result.value = {
         H: font,
