@@ -135,6 +135,10 @@ export const NowrapWrapper: GlyphWrapper = (
       return;
     }
     const font = fonts[char];
+    if (!font) {
+      continue;
+    }
+
     position += getOffsetToNextGlyph(
       fontSize,
       font.getGlyphInfo(char),
@@ -202,6 +206,11 @@ export function measureGlyphLayout(
   let charIndex = 0;
 
   while (charIndex < text.length) {
+    const char = text[charIndex];
+    if (!properties.fonts[char]) {
+      charIndex++;
+      continue;
+    }
     wrapper(properties, availableWidth, charIndex, lineHelper);
     width = Math.max(width, lineHelper.nonWhitespaceWidth);
     lines += 1;

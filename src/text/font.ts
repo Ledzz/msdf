@@ -165,7 +165,7 @@ export function computedFonts(
       const textStr = Array.isArray(text)
         ? text.map((t) => readReactive(t)).join("")
         : readReactive(text);
-
+      console.log(textStr);
       renderer.addGlyphs(textStr + "?");
 
       // loadCachedFont(url, renderer, (font) => {
@@ -194,13 +194,15 @@ export function computedFonts(
       texture.flipY = false;
       const font = new Font(fd, texture);
 
-      result.value = {
-        H: font,
-        e: font,
-        l: font,
-        o: font,
+      const v = {
         "?": font,
       };
+
+      textStr.split("").forEach((c) => {
+        v[c] = font;
+      });
+
+      result.value = v;
       return () => (canceled = true);
     }),
   );
