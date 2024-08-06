@@ -3,10 +3,11 @@ import { createRenderer } from "../lib";
 import { useEffect, useState } from "react";
 import { CanvasTexture, Texture } from "three";
 import { Canvas } from "@react-three/fiber";
-import { Fullscreen, Text } from "@react-three/uikit";
+import { Fullscreen } from "@react-three/uikit";
 import { Font } from "@pmndrs/uikit/internals";
 import { computed } from "@preact/signals-core";
 import { NoColorSpace } from "three/src/constants";
+import { Text } from "./text/text";
 
 const canvas = document.createElement("canvas");
 const canvasTexture = new CanvasTexture(canvas);
@@ -46,13 +47,11 @@ function App() {
 
       await renderer.setFonts(["/Inter-Bold.otf"]);
 
-      console.time("1");
       await renderer.addGlyphs(
         "’|Wj@$()[]{}/\\w%MQm0fgipqy!#&123456789?ABCDEFGHIJKLNOPRSTUVXYZbdhkl;t<>aceos:nruvxz~+=_^*-\"',`. €£ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮйцукенгшщзхъфывапролджэячсмитьбю",
       );
 
       await renderer.addGlyphs("お気に入りの寄付");
-      console.timeEnd("1");
 
       computed(() => {
         if (!fontData.value || !imageData.value) {
@@ -62,7 +61,7 @@ function App() {
 
         return { ...fontData.value, pages: ["data:image/png;base64," + data] };
       }).subscribe((data) => {
-        saveAsJSON(data, "Inter-Bold.json");
+        // saveAsJSON(data, "Inter-Bold.json");
       });
 
       const f = computed(() => {
@@ -79,10 +78,7 @@ function App() {
   }, []);
   return (
     <>
-      <Canvas
-        style={{ height: "100vh" }}
-        onCreated={(state) => console.log(state)}
-      >
+      <Canvas style={{ height: "100vh" }}>
         <mesh position={[2, 0, 0]}>
           <meshBasicMaterial map={texture} />
           <planeGeometry args={[2, 2]} />
@@ -91,7 +87,7 @@ function App() {
         <Fullscreen flexDirection="row" padding={10} gap={10}>
           {/*<DefaultProperties panelMaterialClass={MeshBasicMaterial}>*/}
           <Text fontSize={90} color="red">
-            {counter.toString()}
+            Hello
           </Text>
 
           {/*{font && texture ? (*/}
