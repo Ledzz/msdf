@@ -18,6 +18,7 @@ function App() {
   const [counter, setCounter] = useState(0);
   const [texture, setTexture] = useState(canvasTexture);
   const [font, setFont] = useState<Font>();
+  const [value, setValue] = useState("Hello");
 
   // useEffect(() => {
   //   const interval = setInterval(() => {
@@ -81,6 +82,7 @@ function App() {
   }, []);
   return (
     <>
+      <input value={value} onChange={(e) => setValue(e.target.value)} />
       <Canvas style={{ height: "100vh" }}>
         <OrbitControls />
         <mesh position={[2, 0, 0]}>
@@ -91,7 +93,7 @@ function App() {
         <Root flexDirection="row" padding={10} gap={10}>
           {/*<DefaultProperties panelMaterialClass={MeshBasicMaterial}>*/}
           <Text fontSize={90} color="red">
-            Hello
+            {value}
           </Text>
 
           {/*{font && texture ? (*/}
