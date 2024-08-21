@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build:cpp": "emcc --bind -O3 --closure 1 -flto -sEXPORTED_FUNCTIONS=\"_malloc\",\"_free\" -DMSDFGEN_PUBLIC= -DMSDFGEN_EXT_PUBLIC= -sMODULARIZE --extern-post-js msdfgen/post.js -o lib/msdfgen.js msdfgen/wasm.cpp msdfgen/src/core/Shape.cpp msdfgen/src/core/EdgeHolder.cpp msdfgen/src/core/Projection.cpp msdfgen/src/core/DistanceMapping.cpp msdfgen/src/core/msdfgen.cpp msdfgen/src/core/contour-combiners.cpp msdfgen/src/core/edge-selectors.cpp msdfgen/src/core/MSDFErrorCorrection.cpp msdfgen/src/core/Contour.cpp msdfgen/src/core/msdf-error-correction.cpp msdfgen/src/core/equation-solver.cpp msdfgen/src/core/edge-coloring.cpp msdfgen/src/core/edge-segments.cpp",
+    "build:cpp": "emcc --bind -O3 --closure 1 -flto -sEXPORTED_FUNCTIONS=\"_malloc\",\"_free\" -DMSDFGEN_PUBLIC= -DMSDFGEN_EXT_PUBLIC= -sMODULARIZE --extern-post-js msdfgen/post.js -o lib/msdfgen.js msdfgen/wasm.cpp msdfgen/src/core/*.cpp msdfgen/src/ext/import-font.cpp -I msdfgen/freetype/include",
     "build": "tsc -b && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"

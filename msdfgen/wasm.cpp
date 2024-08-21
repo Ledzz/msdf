@@ -6,8 +6,8 @@
 #include <limits>
 #include <memory>
 
-#include "src/msdfgen-ext.h"
 #include "src/msdfgen.h"
+#include "src/msdfgen-ext.h"
 
 using namespace emscripten;
 using namespace msdfgen;
@@ -106,6 +106,11 @@ void generateOurMSDF(
     msdfgen::generateMSDF(outputBmpRef, shape, transformation);
 }
 
+void parseFont() {
+    // TODO
+    FreetypeHandle *ft = initializeFreetype();
+}
+
 EMSCRIPTEN_BINDINGS(my_class_example) {
     register_vector<float>("VectorFloat");
     register_vector<double>("VectorDouble");
@@ -115,4 +120,5 @@ EMSCRIPTEN_BINDINGS(my_class_example) {
         .field("width", &BitmapRef<float, 3>::width);
 
     function("generateMSDF", &generateOurMSDF);
+    function("parseFont", &parseFont);
 }
