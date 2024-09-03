@@ -119,7 +119,7 @@ export class Renderer {
     ) as Float32Array;
 
     const result = resultTmp.slice();
-
+    console.log(result);
     this.module._free(dataPtr);
 
     // 27 28 27 36
