@@ -6,8 +6,8 @@
 #include <limits>
 #include <memory>
 
-#include "src/msdfgen.h"
-#include "src/msdfgen-ext.h"
+#include "msdfgen.h"
+#include "msdfgen-ext.h"
 
 using namespace emscripten;
 using namespace msdfgen;
