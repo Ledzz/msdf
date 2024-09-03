@@ -43,7 +43,7 @@ add_executable(wasm_app wasm.cpp)
 
 # Link libraries to your executable
 target_link_libraries(wasm_app PRIVATE msdfgen-core ${FREETYPE_LIBRARY})
-#target_link_libraries(wasm_app PRIVATE msdfgen-full ${FREETYPE_LIBRARY})
+#target_link_libraries(wasm_app PRIVATE msdfgen-core ${FREETYPE_LIBRARY})
 
 # Include directories
 target_include_directories(wasm_app PRIVATE ${FREETYPE_INCLUDE_DIRS})
