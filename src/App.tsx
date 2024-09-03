@@ -50,11 +50,12 @@ function App() {
 
       await renderer.setFonts(["/Inter-Bold.otf"]);
 
-      await renderer.addGlyphs(
-        "’|Wj@$()[]{}/\\w%MQm0fgipqy!#&123456789?ABCDEFGHIJKLNOPRSTUVXYZbdhkl;t<>aceos:nruvxz~+=_^*-\"',`. €£ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮйцукенгшщзхъфывапролджэячсмитьбю",
-      );
+      await renderer.addGlyphs("A");
+      // await renderer.addGlyphs(
+      //   "’|Wj@$()[]{}/\\w%MQm0fgipqy!#&123456789?ABCDEFGHIJKLNOPRSTUVXYZbdhkl;t<>aceos:nruvxz~+=_^*-\"',`. €£ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮйцукенгшщзхъфывапролджэячсмитьбю",
+      // );
 
-      await renderer.addGlyphs("お気に入りの寄付");
+      // await renderer.addGlyphs("お気に入りの寄付");
 
       computed(() => {
         if (!fontData.value || !imageData.value) {

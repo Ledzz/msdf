@@ -85,6 +85,48 @@ export class Renderer {
 
   async loadFont(url: string) {
     const font = await (await fetch(url)).arrayBuffer();
+    const width = 33;
+    const height = 35;
+    const range = 4;
+    const scale = 1;
+    const xOffset = 1;
+    const yOffset = 33;
+    const edgeColoringAngleThreshold = 3;
+
+    const arrayLength = width * height * 3;
+    const floatArray = new Float32Array(arrayLength);
+
+    const dataPtr = this.module._malloc(
+      floatArray.length * floatArray.BYTES_PER_ELEMENT,
+    );
+    this.module.HEAPF32.set(floatArray, dataPtr >> 2);
+
+    this.module.parseFont(
+      font,
+      dataPtr,
+      width,
+      height,
+      range,
+      scale,
+      xOffset,
+      yOffset,
+      edgeColoringAngleThreshold,
+    );
+
+    const resultTmp = this.module.HEAPF32.subarray(
+      dataPtr >> 2,
+      (dataPtr >> 2) + arrayLength,
+    ) as Float32Array;
+
+    const result = resultTmp.slice();
+
+    this.module._free(dataPtr);
+
+    // 27 28 27 36
+    // placeOnImageData(result, 27, 28, this.imageData, -27, -36);
+    // if (this.imageData) {
+    //   this.imageDataCallback?.(this.imageData);
+    // }
 
     this.parsedFonts = [parse(font)];
   }
@@ -176,7 +218,6 @@ export class Renderer {
               throw new Error(`Unknown command: ${type}`);
           }
         });
-
         this.module.generateMSDF(
           dataPtr,
           crds,

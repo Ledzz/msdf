@@ -106,9 +106,55 @@ void generateOurMSDF(
     msdfgen::generateMSDF(outputBmpRef, shape, transformation);
 }
 
-void parseFont() {
-    // TODO
-    // FreetypeHandle *ft = initializeFreetype();
+void parseFont(
+    const emscripten::val& arrayBuffer,
+    uintptr_t ptr,
+    int width,
+    int height,
+    double range,
+    double scale,
+    double translate_x,
+    double translate_y,
+    double edgeColoringAngleThreshold
+) {
+    float* pixels = reinterpret_cast<float*>(ptr);
+
+    // Get the size of the ArrayBuffer
+    size_t byteLength = arrayBuffer["byteLength"].as<size_t>();
+
+    // Create a Uint8Array view of the ArrayBuffer
+    emscripten::val uint8Array = emscripten::val::global("Uint8Array").new_(arrayBuffer);
+
+    // Allocate memory for the font data
+    byte* fontData = new byte[byteLength];
+
+    // Copy data from Uint8Array to our allocated memory
+    emscripten::val memoryView = emscripten::val::module_property("HEAPU8").call<emscripten::val>("subarray",
+        reinterpret_cast<uintptr_t>(fontData),
+        reinterpret_cast<uintptr_t>(fontData) + byteLength);
+    memoryView.call<void>("set", uint8Array);
+
+    if (FreetypeHandle *ft = initializeFreetype()) {
+        if (FontHandle *font = loadFontData(ft, fontData, byteLength)) {
+            Shape shape;
+            if (loadGlyph(shape, font, 'A', FONT_SCALING_EM_NORMALIZED)) {
+            BitmapRef<float, 3> outputBmpRef(pixels, width, height);
+                Projection projection(Vector2(scale), Vector2(translate_x, translate_y));
+                Range r(range);
+                DistanceMapping distanceMapping(r);
+                SDFTransformation transformation(projection, distanceMapping);
+
+                shape.normalize();
+                edgeColoringSimple(shape, edgeColoringAngleThreshold);
+                msdfgen::generateMSDF(outputBmpRef, shape, transformation);
+            }
+            destroyFont(font);
+        }
+
+        deinitializeFreetype(ft);
+    }
+
+    delete[] fontData;
 }
 
 EMSCRIPTEN_BINDINGS(my_class_example) {
