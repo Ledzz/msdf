@@ -1,6 +1,6 @@
 import * as Comlink from "comlink";
 
-import Module from "./msdfgen.js";
+import Module from "./wasm_app.js";
 import { Renderer } from "./renderer";
 import { FontInfo, ModuleType } from "./types";
 

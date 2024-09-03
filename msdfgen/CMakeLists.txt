@@ -57,8 +57,8 @@ target_link_libraries(wasm_app PRIVATE msdfgen-core ${FREETYPE_LIBRARY})
 # Include directories
 target_include_directories(wasm_app PRIVATE ${FREETYPE_INCLUDE_DIRS})
 
-# Emscripten-specific settings (if needed)
-if(EMSCRIPTEN)
-  set(CMAKE_EXECUTABLE_SUFFIX ".js")
-  set_target_properties(wasm_app PROPERTIES LINK_FLAGS "-s WASM=1 -s ALLOW_MEMORY_GROWTH=1 --bind")
-endif()
+set(CMAKE_EXECUTABLE_SUFFIX ".js")
+
+set_target_properties(wasm_app PROPERTIES RUNTIME_OUTPUT_DIRECTORY ../../lib/)
+set_target_properties(wasm_app PROPERTIES LINK_FLAGS "--closure 1 -flto -sEXPORTED_FUNCTIONS=\"_malloc\",\"_free\" -sWASM=1 -sALLOW_MEMORY_GROWTH=1 --bind -sMODULARIZE --extern-post-js ../post.js -o ../../lib/msdfgen.js")
+
