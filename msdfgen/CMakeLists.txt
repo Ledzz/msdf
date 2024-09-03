@@ -25,10 +25,9 @@ FetchContent_MakeAvailable(freetype)
 
 # Explicitly set Freetype variables
 set(FREETYPE_INCLUDE_DIRS ${freetype_SOURCE_DIR}/include)
-set(FREETYPE_LIBRARY freetype)
+set(FREETYPE_LIBRARY ${freetype_BINARY_DIR}/libfreetype.a)
 
 # Fetch and build msdfgen
-
 FetchContent_Declare(
   msdfgen
   GIT_REPOSITORY https://github.com/Chlumsky/msdfgen.git
@@ -42,14 +41,14 @@ FetchContent_MakeAvailable(msdfgen)
 add_executable(wasm_app wasm.cpp)
 
 # Link libraries to your executable
-target_link_libraries(wasm_app PRIVATE msdfgen-core ${FREETYPE_LIBRARY})
 #target_link_libraries(wasm_app PRIVATE msdfgen-core ${FREETYPE_LIBRARY})
+target_link_libraries(wasm_app PRIVATE msdfgen-full)
 
 # Include directories
-target_include_directories(wasm_app PRIVATE ${FREETYPE_INCLUDE_DIRS})
+#target_include_directories(wasm_app PRIVATE ${FREETYPE_INCLUDE_DIRS})
 
 set(CMAKE_EXECUTABLE_SUFFIX ".js")
 
 set_target_properties(wasm_app PROPERTIES RUNTIME_OUTPUT_DIRECTORY ../../lib/)
-set_target_properties(wasm_app PROPERTIES LINK_FLAGS "--closure 1 -flto -sEXPORTED_FUNCTIONS=\"_malloc\",\"_free\" -sWASM=1 -sALLOW_MEMORY_GROWTH=1 --bind -sMODULARIZE --extern-post-js ../post.js -o ../../lib/msdfgen.js")
+set_target_properties(wasm_app PROPERTIES LINK_FLAGS "--closure 1 -flto -sEXPORTED_FUNCTIONS=\"_malloc\",\"_free\" -sWASM=1 -sALLOW_MEMORY_GROWTH=1 --bind -sMODULARIZE --extern-post-js ../post.js")
 
