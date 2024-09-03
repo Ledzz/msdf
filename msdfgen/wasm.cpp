@@ -108,7 +108,7 @@ void generateOurMSDF(
 
 void parseFont() {
     // TODO
-//     FreetypeHandle *ft = initializeFreetype();
+    // FreetypeHandle *ft = initializeFreetype();
 }
 
 EMSCRIPTEN_BINDINGS(my_class_example) {
