@@ -175,7 +175,8 @@ class MyFont {
 CharMetrics parseFont(
     uintptr_t fontPtr,
     int fontDataLength,
-    uintptr_t pixelsPtr
+    uintptr_t pixelsPtr,
+    char character
 ) {
   CharMetrics charMetrics;
 
@@ -184,7 +185,7 @@ CharMetrics parseFont(
   float *pixels = reinterpret_cast<float *>(pixelsPtr);
 
   MyFont myFont(fontData, fontDataLength);
-  return myFont.renderGlyph('i', pixels);
+  return myFont.renderGlyph(character, pixels);
 }
 
 EMSCRIPTEN_BINDINGS(my_class_example) {

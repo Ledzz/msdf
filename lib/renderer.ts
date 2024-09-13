@@ -103,6 +103,7 @@ export class Renderer {
         fontPtr,
         fontDataArrayBuffer.byteLength,
         dataPtr,
+        "e".charCodeAt(0),
         // width,
         // height,
         // range,
@@ -124,7 +125,7 @@ export class Renderer {
 
     // 27 28 27 36
     if (this.imageData) {
-      placeOnImageData(result, 11, 36, this.imageData, 0, 0);
+      placeOnImageData(result, 26, 28, this.imageData, 0, 0);
 
       this.imageDataCallback?.(this.imageData);
       console.log(this.imageData);
