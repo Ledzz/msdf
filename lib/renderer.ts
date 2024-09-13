@@ -123,10 +123,12 @@ export class Renderer {
     this.module._free(dataPtr);
 
     // 27 28 27 36
-    // placeOnImageData(result, 27, 28, this.imageData, -27, -36);
-    // if (this.imageData) {
-    //   this.imageDataCallback?.(this.imageData);
-    // }
+    if (this.imageData) {
+      placeOnImageData(result, 33, 35, this.imageData, 0, 0);
+
+      this.imageDataCallback?.(this.imageData);
+      console.log(this.imageData);
+    }
 
     this.parsedFonts = [parse(font)];
   }
@@ -157,7 +159,6 @@ export class Renderer {
 
         const commands = glyph.getPath(0, 0, this.fontSize).commands;
         const bBox = glyph.getPath(0, 0, this.fontSize).getBoundingBox();
-
         const distanceRange = 4;
         const pad = distanceRange >> 1;
 
@@ -168,6 +169,7 @@ export class Renderer {
         const scale = this.fontSize / font.unitsPerEm;
         const baseline =
           font.tables.os2.sTypoAscender * (this.fontSize / font.unitsPerEm);
+        console.log("baseline", baseline);
 
         const char = {
           id: g.charCodeAt(0),
@@ -273,7 +275,7 @@ export class Renderer {
 
         this.fontData.info.charset.push(char.char);
         this.fontData.chars.push({ ...char, width, height, x, y });
-        placeOnImageData(result, width, height, this.imageData, -x, -y);
+        // placeOnImageData(result, width, height, this.imageData, -x, -y);
       });
     });
 

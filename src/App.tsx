@@ -86,11 +86,10 @@ function App() {
       <input value={value} onChange={(e) => setValue(e.target.value)} />
       <Canvas style={{ height: "100vh" }}>
         <OrbitControls />
-        {/*<mesh position={[2, 0, 0]}>*/}
-        {/*  <meshBasicMaterial map={texture} />*/}
-        {/*  <planeGeometry args={[2, 2]} />*/}
-        {/*</mesh>*/}
-
+        <mesh position={[2, 0, 0]}>
+          <meshBasicMaterial map={texture} />
+          <planeGeometry args={[2, 2]} />
+        </mesh>
         <Root flexDirection="row" padding={10} gap={10}>
           {/*<DefaultProperties panelMaterialClass={MeshBasicMaterial}>*/}
           <Text fontSize={90}>{value}</Text>

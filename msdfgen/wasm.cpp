@@ -108,7 +108,8 @@ void generateOurMSDF(
 
 class MyFont {
     public:
-        MyFont(FreetypeHandle *ft, const emscripten::val& arrayBuffer): ft(ft) {
+        MyFont(const emscripten::val& arrayBuffer) {
+            FreetypeHandle *ft = initializeFreetype();
             // Get the size of the ArrayBuffer
             size_t byteLength = arrayBuffer["byteLength"].as<size_t>();
 
@@ -131,6 +132,39 @@ class MyFont {
         }
         FontHandle *font;
 
+        ~MyFont() {
+            deinitializeFreetype(ft);
+        }
+
+        void renderGlyph(unsigned glyph, float* pixels, int fontSize = 42) {
+            Shape shape;
+
+            if (loadGlyph(shape, font, glyph, FONT_SCALING_EM_NORMALIZED)) {
+                msdfgen::Shape::Bounds bounds = shape.getBounds();
+                int distanceRange = 4;
+                double edgeColoringAngleThreshold = 3;
+                int pad = distanceRange >> 1;
+                int width = round(bounds.r * fontSize- bounds.l * fontSize) + pad + pad;
+                int height = round(bounds.t * fontSize - bounds.b * fontSize) + pad + pad;
+                int translate_x = round(-bounds.l * fontSize) + pad;
+                int translate_y = round(-bounds.b * fontSize) + pad;
+
+                FontMetrics fontMetrics;
+                getFontMetrics(fontMetrics, font);
+
+                double scale = fontSize / fontMetrics.emSize;
+                double baseline = fontMetrics.ascenderY * scale;
+                BitmapRef<float, 3> outputBmpRef(pixels, width, height);
+                Projection projection(Vector2(scale), Vector2(translate_x, translate_y));
+                Range r(distanceRange);
+                DistanceMapping distanceMapping(r);
+                SDFTransformation transformation(projection, distanceMapping);
+
+                shape.normalize();
+                edgeColoringSimple(shape, edgeColoringAngleThreshold);
+                msdfgen::generateMSDF(outputBmpRef, shape, transformation);
+            }
+        }
 
     private:
         byte* fontData;
@@ -149,26 +183,9 @@ void parseFont(
     double edgeColoringAngleThreshold
 ) {
     float* pixels = reinterpret_cast<float*>(ptr);
-
-    if (FreetypeHandle *ft = initializeFreetype()) {
-        MyFont myFont(ft, arrayBuffer);
-        Shape shape;
-        if (loadGlyph(shape, myFont.font, 'A', FONT_SCALING_EM_NORMALIZED)) {
-            BitmapRef<float, 3> outputBmpRef(pixels, width, height);
-            Projection projection(Vector2(scale), Vector2(translate_x, translate_y));
-            Range r(range);
-            DistanceMapping distanceMapping(r);
-            SDFTransformation transformation(projection, distanceMapping);
-
-            shape.normalize();
-            edgeColoringSimple(shape, edgeColoringAngleThreshold);
-            msdfgen::generateMSDF(outputBmpRef, shape, transformation);
-        }
-        deinitializeFreetype(ft);
-    }
+    MyFont myFont(arrayBuffer);
+    myFont.renderGlyph('A', pixels);
 }
-
-
 
 EMSCRIPTEN_BINDINGS(my_class_example) {
     register_vector<float>("VectorFloat");
