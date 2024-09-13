@@ -84,33 +84,33 @@ export class Renderer {
   }
 
   async loadFont(url: string) {
-    const font = await (await fetch(url)).arrayBuffer();
+    const fontDataArrayBuffer = await (await fetch(url)).arrayBuffer();
     const width = 33;
     const height = 35;
-    const range = 4;
-    const scale = 1;
-    const xOffset = 1;
-    const yOffset = 33;
-    const edgeColoringAngleThreshold = 3;
 
     const arrayLength = width * height * 3;
     const floatArray = new Float32Array(arrayLength);
+
+    const fontPtr = this.module._malloc(fontDataArrayBuffer.byteLength);
+    this.module.HEAPU8.set(new Uint8Array(fontDataArrayBuffer), fontPtr);
 
     const dataPtr = this.module._malloc(
       floatArray.length * floatArray.BYTES_PER_ELEMENT,
     );
     this.module.HEAPF32.set(floatArray, dataPtr >> 2);
-
-    this.module.parseFont(
-      font,
-      dataPtr,
-      width,
-      height,
-      range,
-      scale,
-      xOffset,
-      yOffset,
-      edgeColoringAngleThreshold,
+    console.log(
+      this.module.parseFont(
+        fontPtr,
+        fontDataArrayBuffer.byteLength,
+        dataPtr,
+        // width,
+        // height,
+        // range,
+        // scale,
+        // xOffset,
+        // yOffset,
+        // edgeColoringAngleThreshold,
+      ),
     );
 
     const resultTmp = this.module.HEAPF32.subarray(
@@ -119,18 +119,18 @@ export class Renderer {
     ) as Float32Array;
 
     const result = resultTmp.slice();
-    console.log(result);
     this.module._free(dataPtr);
+    this.module._free(fontPtr);
 
     // 27 28 27 36
     if (this.imageData) {
-      placeOnImageData(result, 33, 35, this.imageData, 0, 0);
+      placeOnImageData(result, 11, 36, this.imageData, 0, 0);
 
       this.imageDataCallback?.(this.imageData);
       console.log(this.imageData);
     }
 
-    this.parsedFonts = [parse(font)];
+    this.parsedFonts = [parse(fontDataArrayBuffer)];
   }
 
   async addGlyphs(glyphs: string) {
@@ -169,7 +169,6 @@ export class Renderer {
         const scale = this.fontSize / font.unitsPerEm;
         const baseline =
           font.tables.os2.sTypoAscender * (this.fontSize / font.unitsPerEm);
-        console.log("baseline", baseline);
 
         const char = {
           id: g.charCodeAt(0),
@@ -244,6 +243,8 @@ export class Renderer {
 
         crds.delete();
         cmds.delete();
+
+        console.log(g, { ...char, width, height, result });
 
         return {
           width,
