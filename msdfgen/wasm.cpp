@@ -107,8 +107,11 @@ struct CharMetrics {
 
 class MyFont {
  public:
-  MyFont(const byte *fontData, int byteLength)
+  MyFont(int fontPtr, int byteLength)
       : ft(nullptr), font(nullptr), fontData(nullptr) {
+  const byte *fontData = reinterpret_cast<const byte *>(fontPtr);
+
+
     FreetypeHandle *ft = initializeFreetype();
 
     font = loadFontData(ft, fontData, byteLength);
@@ -121,15 +124,51 @@ class MyFont {
     //                      delete[] fontData;
   }
 
-  CharMetrics renderGlyph(unsigned glyph, float *pixels, int fontSize = 42) {
-    Shape shape;
-    CharMetrics charMetrics;
-    double xadvance;
+  CharMetrics getCharMetrics(unsigned glyph, int fontSize = 42) {
+   Shape shape;
+      CharMetrics charMetrics;
+      double xadvance;
 
-    if (loadGlyph(shape, font, glyph, FONT_SCALING_EM_NORMALIZED, &xadvance)) {
+       if (loadGlyph(shape, font, glyph, FONT_SCALING_EM_NORMALIZED, &xadvance)) {
+          shape.inverseYAxis = true;
+            shape.normalize();
+          msdfgen::Shape::Bounds bounds = shape.getBounds();
+          int range = 4;
+          double edgeColoringAngleThreshold = 3;
+          double pad = range >> 1;
+          double width = round(fontSize * bounds.r - fontSize * bounds.l) + pad + pad;
+          double height = round(fontSize * bounds.t - fontSize * bounds.b) + pad + pad;
+          double translate_x = -bounds.l * fontSize + pad;
+          double translate_y = -bounds.b * fontSize + pad;
+
+          FontMetrics fontMetrics;
+          getFontMetrics(fontMetrics, font);
+
+          double scale = fontSize / fontMetrics.emSize;
+          double baseline = fontMetrics.ascenderY * scale;
+
+            // TODO: round
+          charMetrics.xoffset = -translate_x;
+          charMetrics.yoffset = round(bounds.b) + pad + baseline;
+          charMetrics.xadvance = xadvance * scale;
+          charMetrics.width = width;
+          charMetrics.height = height;
+
+          glyphCache[glyph] = shape;
+            charMetricsCache[glyph] = charMetrics;
+
+    }
+          return charMetrics;
+
+  }
+
+  CharMetrics renderGlyph(unsigned glyph, int resultPtr, int fontSize = 42) {
+float *pixels = reinterpret_cast<float *>(resultPtr);
+    Shape shape = glyphCache[glyph];
+    CharMetrics charMetrics = charMetricsCache[glyph];
+
     shape.inverseYAxis = true;
       shape.normalize();
-
       msdfgen::Shape::Bounds bounds = shape.getBounds();
       int range = 4;
       double edgeColoringAngleThreshold = 3;
@@ -146,11 +185,11 @@ class MyFont {
       double baseline = fontMetrics.ascenderY * scale;
 
         // TODO: round
-      charMetrics.xoffset = -translate_x;
-      charMetrics.yoffset = round(bounds.b) + pad + baseline;
-      charMetrics.xadvance = xadvance * scale;
-      charMetrics.width = width;
-      charMetrics.height = height;
+//       charMetrics.xoffset = -translate_x;
+//       charMetrics.yoffset = round(bounds.b) + pad + baseline;
+//       charMetrics.xadvance = xadvance * scale;
+//       charMetrics.width = width;
+//       charMetrics.height = height;
 
       BitmapRef<float, 3> outputBmpRef(pixels, width, height);
 
@@ -160,14 +199,14 @@ class MyFont {
       msdfgen::generateMSDF(outputBmpRef, shape, t);
 
       return charMetrics;
-    }
 
-    return charMetrics;
   }
 
  private:
   byte *fontData;
   FreetypeHandle *ft;
+  std::map<unsigned, Shape> glyphCache;
+  std::map<unsigned, CharMetrics> charMetricsCache;
 };
 
 CharMetrics parseFont(
@@ -176,12 +215,28 @@ CharMetrics parseFont(
     uintptr_t pixelsPtr,
     char character
 ) {
-  const byte *fontData = reinterpret_cast<const byte *>(fontPtr);
+    CharMetrics charMetrics;
 
-  float *pixels = reinterpret_cast<float *>(pixelsPtr);
+return charMetrics;
+//   const byte *fontData = reinterpret_cast<const byte *>(fontPtr);
+//
+//   float *pixels = reinterpret_cast<float *>(pixelsPtr);
+//
+//   MyFont myFont(fontData, fontDataLength);
+//   return myFont.renderGlyph(character, pixels);
+}
 
-  MyFont myFont(fontData, fontDataLength);
-  return myFont.renderGlyph(character, pixels);
+// MyFont* makeMyFont(int fontPtr,
+//                        int fontDataLength) {
+//   const byte *fontData = reinterpret_cast<const byte *>(fontPtr);
+//
+//     return new MyFont(fontData, fontDataLength);
+// }
+
+
+// Helper function to allow binding of unsigned char*
+const byte * reinterpretCastByte(uintptr_t ptr) {
+    return reinterpret_cast<const byte *>(ptr);
 }
 
 EMSCRIPTEN_BINDINGS(my_class_example) {
@@ -201,4 +256,10 @@ EMSCRIPTEN_BINDINGS(my_class_example) {
 
   function("generateMSDF", &generateOurMSDF);
   function("parseFont", &parseFont, allow_raw_pointers());
+
+  class_<MyFont>("MyFont")
+      .constructor<int, int>(allow_raw_pointers())
+      .function("getCharMetrics", &MyFont::getCharMetrics)
+        .function("renderGlyph", &MyFont::renderGlyph, allow_raw_pointers());
+
 }

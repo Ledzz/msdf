@@ -99,12 +99,18 @@ export class Renderer {
       floatArray.length * floatArray.BYTES_PER_ELEMENT,
     );
     this.module.HEAPF32.set(floatArray, dataPtr >> 2);
+
+    const f = new this.module.MyFont(fontPtr, fontDataArrayBuffer.byteLength);
+
+    // console.log();
+    const charMetrics = f.getCharMetrics("a".charCodeAt(0), 42);
+
     console.log(
-      this.module.parseFont(
-        fontPtr,
-        fontDataArrayBuffer.byteLength,
-        dataPtr,
+      f.renderGlyph(
         "a".charCodeAt(0),
+
+        dataPtr,
+        42,
         // width,
         // height,
         // range,
