@@ -5,7 +5,7 @@ import { CanvasTexture, Texture } from "three";
 import { Canvas } from "@react-three/fiber";
 import { Root } from "@react-three/uikit";
 import { Font } from "@pmndrs/uikit/internals";
-import { computed } from "@preact/signals-core";
+import { computed, effect } from "@preact/signals-core";
 import { NoColorSpace } from "three/src/constants";
 import { Text } from "./text/text";
 import { OrbitControls } from "@react-three/drei";
@@ -18,7 +18,7 @@ function App() {
   const [counter, setCounter] = useState(0);
   const [texture, setTexture] = useState(canvasTexture);
   const [font, setFont] = useState<Font>();
-  const [value, setValue] = useState("Hello");
+  const [value, setValue] = useState("W");
 
   // useEffect(() => {
   //   const interval = setInterval(() => {
@@ -32,7 +32,8 @@ function App() {
       const { renderer, imageData, fontData } = await createRenderer();
       // document.body.appendChild(canvas);
 
-      imageData.subscribe((data) => {
+      effect(() => {
+        const data = imageData.value;
         if (data) {
           const t = new Texture(data);
           t.needsUpdate = true;
@@ -50,7 +51,7 @@ function App() {
 
       await renderer.setFonts(["/Inter-Bold.otf"]);
 
-      await renderer.addGlyphs("A");
+      await renderer.addGlyphs("W");
       // await renderer.addGlyphs(
       //   "’|Wj@$()[]{}/\\w%MQm0fgipqy!#&123456789?ABCDEFGHIJKLNOPRSTUVXYZbdhkl;t<>aceos:nruvxz~+=_^*-\"',`. €£ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮйцукенгшщзхъфывапролджэячсмитьбю",
       // );

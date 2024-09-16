@@ -85,14 +85,15 @@ export class Renderer {
 
   async loadFont(url: string) {
     const fontDataArrayBuffer = await (await fetch(url)).arrayBuffer();
-    const width = 33;
-    const height = 35;
+    const width = 25;
+    const height = 28;
 
     const arrayLength = width * height * 3;
-    const floatArray = new Float32Array(arrayLength);
 
     const fontPtr = this.module._malloc(fontDataArrayBuffer.byteLength);
     this.module.HEAPU8.set(new Uint8Array(fontDataArrayBuffer), fontPtr);
+
+    const floatArray = new Float32Array(arrayLength);
 
     const dataPtr = this.module._malloc(
       floatArray.length * floatArray.BYTES_PER_ELEMENT,
@@ -103,7 +104,7 @@ export class Renderer {
         fontPtr,
         fontDataArrayBuffer.byteLength,
         dataPtr,
-        "e".charCodeAt(0),
+        "a".charCodeAt(0),
         // width,
         // height,
         // range,
@@ -124,11 +125,11 @@ export class Renderer {
     this.module._free(fontPtr);
 
     // 27 28 27 36
+
     if (this.imageData) {
-      placeOnImageData(result, 26, 28, this.imageData, 0, 0);
+      placeOnImageData(result, width, height, this.imageData, 0, 0);
 
       this.imageDataCallback?.(this.imageData);
-      console.log(this.imageData);
     }
 
     this.parsedFonts = [parse(fontDataArrayBuffer)];
@@ -233,6 +234,14 @@ export class Renderer {
           3,
         );
 
+        console.log(g, {
+          width,
+          height,
+          distanceRange,
+          xOffset,
+          yOffset,
+        });
+
         const resultTmp = this.module.HEAPF32.subarray(
           dataPtr >> 2,
           (dataPtr >> 2) + arrayLength,
@@ -244,8 +253,6 @@ export class Renderer {
 
         crds.delete();
         cmds.delete();
-
-        console.log(g, { ...char, width, height, result });
 
         return {
           width,

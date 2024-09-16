@@ -127,14 +127,17 @@ class MyFont {
     double xadvance;
 
     if (loadGlyph(shape, font, glyph, FONT_SCALING_EM_NORMALIZED, &xadvance)) {
+    shape.inverseYAxis = true;
+      shape.normalize();
+
       msdfgen::Shape::Bounds bounds = shape.getBounds();
-      int distanceRange = 4;
+      int range = 4;
       double edgeColoringAngleThreshold = 3;
-      int pad = distanceRange >> 1;
-      int width = round(bounds.r * fontSize - bounds.l * fontSize) + pad + pad;
-      int height = round(bounds.t * fontSize - bounds.b * fontSize) + pad + pad;
-      int translate_x = round(-bounds.l * fontSize) + pad;
-      int translate_y = round(-bounds.b * fontSize) + pad;
+      double pad = range >> 1;
+      double width = round(fontSize * bounds.r - fontSize * bounds.l) + pad + pad;
+      double height = round(fontSize * bounds.t - fontSize * bounds.b) + pad + pad;
+      double translate_x = -bounds.l * fontSize + pad;
+      double translate_y = -bounds.b * fontSize + pad;
 
       FontMetrics fontMetrics;
       getFontMetrics(fontMetrics, font);
@@ -142,24 +145,19 @@ class MyFont {
       double scale = fontSize / fontMetrics.emSize;
       double baseline = fontMetrics.ascenderY * scale;
 
+        // TODO: round
       charMetrics.xoffset = -translate_x;
-      charMetrics.yoffset = round(bounds.b * fontSize) + pad + baseline;
-      charMetrics.xadvance = xadvance * scale * fontSize;
+      charMetrics.yoffset = round(bounds.b) + pad + baseline;
+      charMetrics.xadvance = xadvance * scale;
       charMetrics.width = width;
       charMetrics.height = height;
 
-      printf("charMetrics.width: %d\n", charMetrics.width);
-      printf("charMetrics.height: %d\n", charMetrics.height);
-
       BitmapRef<float, 3> outputBmpRef(pixels, width, height);
-      Projection projection(Vector2(scale), Vector2(translate_x, translate_y));
-      Range r(distanceRange);
-      DistanceMapping distanceMapping(r);
-      SDFTransformation transformation(projection, distanceMapping);
 
-      shape.normalize();
       edgeColoringSimple(shape, edgeColoringAngleThreshold);
-      msdfgen::generateMSDF(outputBmpRef, shape, transformation);
+      SDFTransformation t(Projection(fontSize, Vector2(translate_x / fontSize, translate_y / fontSize)), Range(1/40));
+
+      msdfgen::generateMSDF(outputBmpRef, shape, t);
 
       return charMetrics;
     }
@@ -178,8 +176,6 @@ CharMetrics parseFont(
     uintptr_t pixelsPtr,
     char character
 ) {
-  CharMetrics charMetrics;
-
   const byte *fontData = reinterpret_cast<const byte *>(fontPtr);
 
   float *pixels = reinterpret_cast<float *>(pixelsPtr);

@@ -116,7 +116,7 @@ export function createInstancedText(
         }
         const group = glyphGroupManager.getGroup(
           orderInfo.value.majorIndex,
-          fonts["H"],
+          fonts["W"],
         );
         // group.instanceMaterial = new MeshBasicMaterial({ color: 0xff0000 });
         // console.log(group);

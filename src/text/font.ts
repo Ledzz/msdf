@@ -165,7 +165,7 @@ export function computedFonts(
       const textStr = Array.isArray(text)
         ? text.map((t) => readReactive(t)).join("")
         : readReactive(text);
-      renderer.addGlyphs(textStr + "?");
+      // renderer.addGlyphs(textStr + "?");
 
       // loadCachedFont(url, renderer, (font) => {
       //   console.log(font);
