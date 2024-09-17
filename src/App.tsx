@@ -51,10 +51,13 @@ function App() {
 
       await renderer.setFonts(["/Inter-Bold.otf"]);
 
-      await renderer.addGlyphs("W");
+      console.time("1");
+      // await renderer.addGlyphs("W");
       // await renderer.addGlyphs(
-      //   "’|Wj@$()[]{}/\\w%MQm0fgipqy!#&123456789?ABCDEFGHIJKLNOPRSTUVXYZbdhkl;t<>aceos:nruvxz~+=_^*-\"',`. €£ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮйцукенгшщзхъфывапролджэячсмитьбю",
+      //     "’|Wj@$()[]{}/\\w%MQm0fgipqy!#&123456789?ABCDEFGHIJKLNOPRSTUVXYZbdhkl;t<>aceos:nruvxz~+=_^*-\"',`. €£ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮйцукенгшщзхъфывапролджэячсмитьбю",
       // );
+      await renderer.addGlyphs("qwertyuiopa");
+      console.timeEnd("1");
 
       // await renderer.addGlyphs("お気に入りの寄付");
 

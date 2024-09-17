@@ -15,6 +15,7 @@ export class Renderer {
   fontSize: number;
   packer: MaxRectsPacker<PackerRectangle>;
   parsedFonts?: Font[];
+  myFonts?: any[];
   urls?: string[];
 
   imageData?: ImageData;
@@ -85,60 +86,17 @@ export class Renderer {
 
   async loadFont(url: string) {
     const fontDataArrayBuffer = await (await fetch(url)).arrayBuffer();
-    const width = 25;
-    const height = 28;
-
-    const arrayLength = width * height * 3;
 
     const fontPtr = this.module._malloc(fontDataArrayBuffer.byteLength);
     this.module.HEAPU8.set(new Uint8Array(fontDataArrayBuffer), fontPtr);
 
-    const floatArray = new Float32Array(arrayLength);
-
-    const dataPtr = this.module._malloc(
-      floatArray.length * floatArray.BYTES_PER_ELEMENT,
-    );
-    this.module.HEAPF32.set(floatArray, dataPtr >> 2);
-
     const f = new this.module.MyFont(fontPtr, fontDataArrayBuffer.byteLength);
 
-    // console.log();
-    const charMetrics = f.getCharMetrics("a".charCodeAt(0), 42);
-
-    console.log(
-      f.renderGlyph(
-        "a".charCodeAt(0),
-
-        dataPtr,
-        42,
-        // width,
-        // height,
-        // range,
-        // scale,
-        // xOffset,
-        // yOffset,
-        // edgeColoringAngleThreshold,
-      ),
-    );
-
-    const resultTmp = this.module.HEAPF32.subarray(
-      dataPtr >> 2,
-      (dataPtr >> 2) + arrayLength,
-    ) as Float32Array;
-
-    const result = resultTmp.slice();
-    this.module._free(dataPtr);
-    this.module._free(fontPtr);
-
-    // 27 28 27 36
-
-    if (this.imageData) {
-      placeOnImageData(result, width, height, this.imageData, 0, 0);
-
-      this.imageDataCallback?.(this.imageData);
-    }
+    this.myFonts = [f];
 
     this.parsedFonts = [parse(fontDataArrayBuffer)];
+
+    this.module._free(fontPtr);
   }
 
   async addGlyphs(glyphs: string) {
@@ -152,7 +110,7 @@ export class Renderer {
     if (!this.parsedFonts) {
       throw new Error("Unknown error");
     }
-    const font = this.parsedFonts[0];
+    const font = this.myFonts[0];
 
     const rectangles = glyphs
       .split("")
@@ -160,105 +118,38 @@ export class Renderer {
         if (this.packer.rects.some((r) => r.char === g)) {
           return;
         }
-        const glyph = font.charToGlyph(g);
-        if (glyph.name === ".notdef") {
-          // TODO: handle missing glyphs
-        }
 
-        const commands = glyph.getPath(0, 0, this.fontSize).commands;
-        const bBox = glyph.getPath(0, 0, this.fontSize).getBoundingBox();
-        const distanceRange = 4;
-        const pad = distanceRange >> 1;
-
-        const width = Math.round(bBox.x2 - bBox.x1) + pad + pad;
-        const height = Math.round(bBox.y2 - bBox.y1) + pad + pad;
-        const xOffset = Math.round(-bBox.x1) + pad;
-        const yOffset = Math.round(-bBox.y1) + pad;
-        const scale = this.fontSize / font.unitsPerEm;
-        const baseline =
-          font.tables.os2.sTypoAscender * (this.fontSize / font.unitsPerEm);
-
-        const char = {
-          id: g.charCodeAt(0),
-          index: glyph.index,
-          char: g,
-          xoffset: Math.round(bBox.x1) - pad,
-          yoffset: Math.round(bBox.y1) + pad + baseline,
-          xadvance: (glyph.advanceWidth ?? 0) * scale,
-          chnl: 15,
-          x: 0,
-          y: 0,
-          page: 0,
-        };
-
+        const { width, height, xoffset, yoffset, xadvance } =
+          font.getCharMetrics(g.charCodeAt(0), 42);
+        console.log({ g, width, height });
         const arrayLength = width * height * 3;
-        const floatArray = new Float32Array(arrayLength);
 
+        const floatArray = new Float32Array(arrayLength);
         const dataPtr = this.module._malloc(
           floatArray.length * floatArray.BYTES_PER_ELEMENT,
         );
         this.module.HEAPF32.set(floatArray, dataPtr >> 2);
-
-        const crds = new this.module.VectorDouble();
-        const cmds = new this.module.VectorInt();
-
-        commands.forEach((command) => {
-          const { type, x, y, x1, y1, x2, y2 } = command as any; // TODO: Cubic, quadratic
-
-          cmds.push_back(type.charCodeAt(0));
-
-          switch (type) {
-            case "M":
-            case "L":
-              crds.push_back(x);
-              crds.push_back(y);
-              break;
-            case "C":
-              crds.push_back(x1);
-              crds.push_back(y1);
-              crds.push_back(x2);
-              crds.push_back(y2);
-              crds.push_back(x);
-              crds.push_back(y);
-              break;
-            case "Z":
-              break;
-            default:
-              throw new Error(`Unknown command: ${type}`);
-          }
-        });
-        this.module.generateMSDF(
-          dataPtr,
-          crds,
-          cmds,
-          width,
-          height,
-          distanceRange,
-          1,
-          xOffset,
-          yOffset,
-          3,
-        );
-
-        console.log(g, {
-          width,
-          height,
-          distanceRange,
-          xOffset,
-          yOffset,
-        });
-
+        font.renderGlyph(g.charCodeAt(0), dataPtr);
         const resultTmp = this.module.HEAPF32.subarray(
           dataPtr >> 2,
           (dataPtr >> 2) + arrayLength,
         ) as Float32Array;
 
         const result = resultTmp.slice();
-
         this.module._free(dataPtr);
 
-        crds.delete();
-        cmds.delete();
+        const char = {
+          id: g.charCodeAt(0),
+          index: 0, //glyph.index,
+          char: g,
+          xoffset: xoffset, //Math.round(bBox.x1) - pad,
+          yoffset: yoffset, //Math.round(bBox.y1) + pad + baseline,
+          xadvance: xadvance, //(glyph.advanceWidth ?? 0) * scale,
+          chnl: 15,
+          x: 0,
+          y: 0,
+          page: 0,
+        };
 
         return {
           width,
@@ -290,7 +181,7 @@ export class Renderer {
 
         this.fontData.info.charset.push(char.char);
         this.fontData.chars.push({ ...char, width, height, x, y });
-        // placeOnImageData(result, width, height, this.imageData, -x, -y);
+        placeOnImageData(result, width, height, this.imageData, -x, -y);
       });
     });
 
